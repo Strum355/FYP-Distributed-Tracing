@@ -1,0 +1,11 @@
+[
+  {
+    "name": "xyz.noahsc.topology.Driver",
+    "fields" : [
+      { "name" : "id" },
+      { "name" : "firstName" },
+      { "name" : "lastName" },
+      { "name": "nationality" }
+    ]
+  }
+]

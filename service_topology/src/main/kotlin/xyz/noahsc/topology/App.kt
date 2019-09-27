@@ -4,6 +4,8 @@
 package xyz.noahsc.topology
 
 import io.ktor.application.Application
+import io.ktor.application.ApplicationStopped
+import io.ktor.application.ApplicationStarting
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CallLogging
@@ -23,7 +25,11 @@ import mbuhot.eskotlin.query.term.range
 import org.elasticsearch.index.query.TermQueryBuilder
 import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.RestHighLevelClient
+import org.elasticsearch.action.search.SearchRequest
+import org.elasticsearch.search.builder.SearchSourceBuilder
+import org.elasticsearch.client.RequestOptions
 import org.apache.http.HttpHost
+import org.slf4j.LoggerFactory
 
 data class Driver(val id: Int, val firstName: String, val lastName: String, val nationality: String)
 
@@ -34,33 +40,35 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    val lowLevel = RestClient.builder(HttpHost("localhost", 9200))
+    val client: RestHighLevelClient = RestHighLevelClient(lowLevel)
+
     install(ContentNegotiation) {
         gson {
             setPrettyPrinting()
         }
     }
+
+    install(CallLogging) { }
+
+    environment.monitor.subscribe(ApplicationStopped) { 
+        client.close()
+    }
+
     routing {
        get("/drivers"){
-           val lowLevel = RestClient.builder(HttpHost("localhost", 9200))
-           val client = RestHighLevelClient(lowLevel)
-           val query = bool { 
+            val query = bool { 
                 must {
-                    bool {
-                        should = listOf(
-                            term { "Ticket" to "banana" },
-                            term { "TicketState" to "deleted" }
-                        )
-                    }
-                }
-                filter {
-                    range { 
-                        "CreatedAt" {
-                            lte = "now-30d/d"      
-                        }
-                    }
+                    term { "operationName" to "actor.ActorFunc/*main.request"}
                 }
             }
-           call.respond(query.toString())
+            
+            val request = SearchRequest("jaeger-span-*")
+            val builder = SearchSourceBuilder()
+            builder.query(query)
+            request.source(builder)
+            val resp = client.search(request, RequestOptions.DEFAULT)
+            call.respond(resp.hits.hits.map { it.sourceAsMap })
        }
     }
 }

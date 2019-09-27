@@ -22,6 +22,8 @@ dependencies {
     implementation("io.ktor:ktor-gson:1.2.4")
     compile("mbuhot:eskotlin:0.7.0")
     compile("org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.2")
+    compile("ch.qos.logback:logback-classic:1.2.3")
+    compile("org.apache.logging.log4j:log4j-core:2.12.1")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -33,6 +35,7 @@ tasks.withType<KotlinCompile>().configureEach {
         allWarningsAsErrors = project.findProperty("warningsAsErrors") != "false"
     }
 }
+
 
 val fatjar by tasks.creating(Jar::class) {
     from(kraal.outputZipTrees) {

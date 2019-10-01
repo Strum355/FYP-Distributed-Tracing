@@ -1,8 +1,11 @@
 version: '3.7'
 services: 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.3.2
-    container_name: netsoc-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+    container_name: fyp-elasticsearch
+    user: 1000:1000
+    volumes: 
+      - ./data:/usr/share/elasticsearch/data
     environment:
       discovery.type: single-node
       xpack.security.enabled: 'false'
@@ -16,6 +19,8 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:latest
+    container_name: fyp-jaeger
+    restart: on-failure
     environment:
       COLLECTOR_ZIPKIN_HTTP_PORT: 9411
       SPAN_STORAGE_TYPE: elasticsearch
@@ -33,10 +38,23 @@ services:
       - '9411:9411'
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.3.2
-    container_name: netsoc-kibana
+    image: docker.elastic.co/kibana/kibana:7.4.0
+    container_name: fyp-kibana
     environment:
       ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
       - 5601:5601
   
+  hotrot:
+    image: jaegertracing/example-hotrod
+    container_name: fyp-hotrod
+    command: all
+    restart: on-failure
+    environment: 
+      JAEGER_AGENT_HOST: jaeger
+      JAEGER_AGENT_PORT: 6831
+    ports:
+      - 8080-8083:8080-8083
+    depends_on: 
+      - jaeger
+    

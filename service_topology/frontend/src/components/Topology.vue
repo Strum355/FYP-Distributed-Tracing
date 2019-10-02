@@ -1,6 +1,5 @@
 <template>
     <div id="graph">
-        <svg height="800" width="1000"></svg>
     </div>
 </template>
 

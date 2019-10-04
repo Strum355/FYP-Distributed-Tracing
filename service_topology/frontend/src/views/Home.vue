@@ -1,10 +1,7 @@
 <template>
-  <div class="home">
-    <Topology/>
-  </div>
+    <div>
+        <TopologyGraph/>
+    </div>
 </template>
 
-<script lang="ts">
-import Home from './home'
-export default Home
-</script>
+<script lang="ts" src="./home.ts"></script>

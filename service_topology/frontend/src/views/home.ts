@@ -1,9 +1,9 @@
-import Topology from '@/components/Topology.vue'
+import TopologyGraph from '@/components/TopologyGraph.vue'
 import { Component, Vue } from 'vue-property-decorator'
 
 @Component({
   components: {
-    Topology,
+    TopologyGraph,
   },
 })
 export default class Home extends Vue {}

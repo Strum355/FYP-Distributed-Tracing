@@ -2,12 +2,12 @@ import ForceGraph from 'force-graph'
 import { Component, Vue } from 'vue-property-decorator'
 
 @Component
-export default class Topology extends Vue {
+export default class TopologyGraph extends Vue {
   public mounted() {
-    let node1: ForceGraph.GraphNode = {id: 'Myriel', name: 'burger', val: ''}
-    let node2: ForceGraph.GraphNode = {id: 'Blop', name: 'burger', val: ''}
+    const node1: ForceGraph.GraphNode = {id: 'Myriel', name: 'burger', val: ''}
+    const node2: ForceGraph.GraphNode = {id: 'Blop', name: 'burger', val: ''}
 
-    let data: ForceGraph.GraphData = {
+    const data: ForceGraph.GraphData = {
       nodes: [
         node1, node2,
       ],

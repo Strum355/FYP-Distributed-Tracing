@@ -16,7 +16,9 @@ export default class TopologyGraph extends Vue {
       ]
     }
 
-    ForceGraph()(this.$el as HTMLElement).graphData(data).onNodeClick((node: ForceGraph.GraphNode) => {
+    const graph = ForceGraph()(document.getElementById('graph')!!)
+    graph.width(800).height(500)
+    graph.graphData(data).onNodeClick((node: ForceGraph.GraphNode) => {
       console.log(node.id)
     })
   }

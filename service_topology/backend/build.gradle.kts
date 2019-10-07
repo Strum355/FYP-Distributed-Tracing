@@ -39,11 +39,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 
 val fatjar by tasks.creating(Jar::class) {
-    from(kraal.outputZipTrees) {
-        exclude("META-INF/*.SF")
-        exclude("META-INF/*.DSA")
-        exclude("META-INF/*.RSA")
-    }
+    from(kraal.outputZipTrees) {}
 
     manifest {        
         attributes("Main-Class" to "xyz.noahsc.topology.AppKt")
@@ -51,15 +47,6 @@ val fatjar by tasks.creating(Jar::class) {
 
     destinationDirectory.set(project.buildDir.resolve("fatjar"))
     archiveFileName.set("topology.jar")
-}
-
-tasks.named("assemble").configure {
-    dependsOn(fatjar)
-}
-
-tasks.register<Exec>("native") {
-    dependsOn("assemble")
-    commandLine("/home/noah/.gradle/caches/com.palantir.graal/19.2.0/graalvm-ce-19.2.0/bin/native-image --no-server --initialize-at-build-time=io.ktor,kotlinx,kotlin -H:ReflectionConfigurationFiles=reflection.json --no-fallback --allow-incomplete-classpath --static --report-unsupported-elements-at-runtime -jar build/fatjar/topology.jar".split(" "))
 }
 
 application {

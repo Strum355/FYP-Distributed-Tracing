@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
 data class Fruit(val name: String, val weight: Float)
 
 fun Application.module() {
-    val lowLevel = RestClient.builder(HttpHost("localhost", 9200))
+    val lowLevel = RestClient.builder(HttpHost("elasticsearch", 9200))
     val client: RestHighLevelClient = RestHighLevelClient(lowLevel)
     
     install(ContentNegotiation) {

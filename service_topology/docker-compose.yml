@@ -19,7 +19,6 @@ services:
       - "traefik.http.services.es.loadbalancer.server.port=9200"     
     ports:
       - 9200:9200
-      - 9300:9300
     depends_on: 
       - traefik
 
@@ -39,14 +38,6 @@ services:
       - elasticsearch
       - traefik
       - kibana
-    ports:
-      - '5775:5775/udp'
-      - '6831:6831/udp'
-      - '6832:6832/udp'
-      - '5778:5778'
-      - '16686:16686'
-      - '14268:14268'
-      - '9411:9411'
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.4.0
@@ -57,8 +48,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.kibana.rule=Host(`kibana.localhost`)"
       - "traefik.http.services.kibana.loadbalancer.server.port=5601"
-    ports:
-      - 5601
     depends_on: 
       - traefik
   
@@ -70,8 +59,6 @@ services:
     environment: 
       JAEGER_AGENT_HOST: jaeger
       JAEGER_AGENT_PORT: 6831
-    ports:
-      - 8080-8083:8080-8083
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hotrod.rule=Host(`hotrod.localhost`)"
@@ -87,8 +74,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.topology.rule=Host(`backend.localhost`)"
       - "traefik.http.services.topology.loadbalancer.server.port=8080"
-    ports:
-      - 8082:8080
     depends_on: 
       - traefik
       - elasticsearch
@@ -97,8 +82,8 @@ services:
     build: 
       context: ./frontend
     container_name: fyp-frontend
-    ports: 
-      - 8081:8080
+    volumes: 
+      - ./frontend:/app
     labels: 
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`)"

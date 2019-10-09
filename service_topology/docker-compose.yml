@@ -67,9 +67,12 @@ services:
       - jaeger
     
   topology:
-    build: 
+    build:
+      target: dev
       context: ./backend
     container_name: fyp-topology
+    volumes: 
+      - ./backend/src:/topology/src
     labels: 
       - "traefik.enable=true"
       - "traefik.http.routers.topology.rule=Host(`backend.localhost`)"

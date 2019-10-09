@@ -32,11 +32,8 @@ tasks.withType<KotlinCompile>().configureEach {
         jvmTarget = "1.8"
         // need use-experimental for Ktor CIO
         freeCompilerArgs += listOf("-Xuse-experimental=kotlin.Experimental", "-progressive")
-        // disable -Werror with: ./gradlew -PwarningsAsErrors=false
-        //allWarningsAsErrors = project.findProperty("warningsAsErrors") != "false"
     }
 }
-
 
 val fatjar by tasks.creating(Jar::class) {
     from(kraal.outputZipTrees) {}

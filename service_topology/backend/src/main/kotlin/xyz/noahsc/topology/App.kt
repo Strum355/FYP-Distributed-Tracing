@@ -34,7 +34,7 @@ import com.apurebase.kgraphql.KGraphQL
 
 @UseExperimental(KtorExperimentalAPI::class)
 fun main(args: Array<String>) {
-    val server = embeddedServer(CIO, 8080, module = Application::module)
+    val server = embeddedServer(CIO, 8080, watchPaths = listOf("topology"), module = Application::module)
     server.start(wait = true)
 }
 
@@ -58,12 +58,13 @@ fun Application.module() {
     
     routing {
         get("/drivers") {
+            val spanID = call.request.queryParameters["spanID"]
             val query = bool { 
                 must {
-                    term { "operationName" to "actor.ActorFunc/*main.request"}
+                    term { "spanID" to spanID!! }
                 }
             }
-            
+
             val request = SearchRequest("jaeger-span-*")
             val builder = SearchSourceBuilder()
             builder.query(query)

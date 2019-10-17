@@ -2,8 +2,12 @@
     <div>
         <v-container fluid>    
             <v-row>
+                <v-col lg="2" sm="4">
+                    <v-text-field v-on:keyup.enter="findTrace($event)" id="trace-id" label="Trace ID"></v-text-field>
+                </v-col>
+            </v-row>
+            <v-row>
                 <v-col cols="12">
-                    <v-slider color="black" label="Time"></v-slider>
                     <div id="graph"></div>
                 </v-col>
             </v-row>
@@ -21,5 +25,16 @@ svg {
 #graph {
     display: flex;
     justify-content: center;
+    height: 150%;
+    border: 1px solid gainsboro;
 }
+
+#trace-id {
+    font-family: monospace;
+}
+
+main {
+    background-color: rgb(249, 255, 255)
+}
+
 </style>

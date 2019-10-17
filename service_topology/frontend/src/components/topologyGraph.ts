@@ -13,10 +13,8 @@ export default class TopologyGraph extends Vue {
         node1, node2, node3,
       ],
       links: [
-        // @ts-ignore
-        {source: node3, target: node2, type: ''},
-        // @ts-ignore
-        {source: node3, target: node1, type: ''},
+        {id: '1', source: node3, target: node2, type: ''},
+        {id: '2', source: node3, target: node1, type: ''},
       ]
     }
 
@@ -26,5 +24,12 @@ export default class TopologyGraph extends Vue {
       // @ts-ignore
       graph.emitParticle(graph.graphData().links[0] as ForceGraph.GraphLinkObject)
     })
+  }
+
+  public async findTrace(event: Event) {
+    const resp = await fetch('/api/schema')
+    const body = await resp.json()
+    console.log(body)
+    console.log((event.srcElement as HTMLInputElement).value)
   }
 }

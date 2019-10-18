@@ -31,14 +31,14 @@ import org.elasticsearch.client.RequestOptions
 import org.apache.http.HttpHost
 import org.slf4j.LoggerFactory
 import com.apurebase.kgraphql.KGraphQL
+import xyz.noahsc.topology.data.*
+import com.google.gson.*
 
 @UseExperimental(KtorExperimentalAPI::class)
 fun main(args: Array<String>) {
     val server = embeddedServer(CIO, 8080, watchPaths = listOf("topology"), module = Application::module)
     server.start(wait = true)
 }
-
-data class Fruit(val name: String, val weight: Float)
 
 fun Application.module() {
     val lowLevel = RestClient.builder(HttpHost("elasticsearch", 9200))
@@ -55,6 +55,30 @@ fun Application.module() {
     environment.monitor.subscribe(ApplicationStopped) { 
         client.close()
     }
+
+    val schema = KGraphQL.schema { 
+        configure { 
+            useDefaultPrettyPrinter = true
+        }
+
+        query("trace") { 
+            resolver { traceID: String ->
+                val query = bool {
+                    must {
+                        term { "traceID" to traceID }
+                    }
+                }
+
+                val resp = client.search(
+                    SearchRequest("jaeger-span-*").source(SearchSourceBuilder().query(query)),
+                    RequestOptions.DEFAULT
+                )
+
+                Trace.fromSearchHits(traceID, resp.hits.hits)
+            }
+        }
+    }
+
     
     routing {
         get("/drivers") {
@@ -74,24 +98,17 @@ fun Application.module() {
         }
         
         get("/schema") {
-            val schema = KGraphQL.schema { 
-                configure { 
-                    useDefaultPrettyPrinter = true
-                 }
-                query("trace") { 
-                    resolver { name: String, weight: Float ->
-                        Fruit(name, weight)
+            //call.respond(schema.execute(call.request.queryParameters["query"]!!))
+            call.respond(schema.execute("""
+            {
+                trace(traceID: "6ebde5170cd7fdb1") {
+                    traceID
+                    spans {
+                        spanID
                     }
                 }
-                type<Fruit>()
             }
-            
-            call.respond(schema.execute("""{
-                trace(name: "epic", weight: 5.0) {
-                    name
-                    weight
-                }
-            }""".trimIndent()))
+            """))
         }
     }
 }

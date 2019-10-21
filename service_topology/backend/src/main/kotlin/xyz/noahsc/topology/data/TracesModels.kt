@@ -15,9 +15,9 @@ public data class Span(
     val traceID: String,
     val spanID: String,
     val duration: Int,
-    val startTime: Int,
+    val startTime: Long,
     val operationName: String,
-    val serviceName: String,
+    val serviceName: String?,
     val logs: List<LogPoint>?,
     val tags: List<Tag>?
 ) {
@@ -27,9 +27,9 @@ public data class Span(
             val traceID = source.get("traceID") as String
             val spanID = source.get("spanID") as String
             val duration = source.get("duration") as Int
-            val startTime = source.get("startTime") as Int
+            val startTime = source.get("startTime") as Long
             val operationName = source.get("operationName") as String
-            val serviceName = source.get("serviceName") as String
+            val serviceName = source.get("serviceName") as String?
             return Span(traceID, spanID, duration, startTime, operationName, serviceName, emptyArray<LogPoint>().toList<LogPoint>(), emptyArray<Tag>().toList())
         }
     }

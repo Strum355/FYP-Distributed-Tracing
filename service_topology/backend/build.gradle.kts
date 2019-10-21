@@ -18,8 +18,9 @@ group = "xyz.noahsc.topology"
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("io.ktor:ktor-server-cio:1.2.4")
-    implementation("io.ktor:ktor-gson:1.2.4")
+    implementation("io.ktor:ktor-server-cio:1.2.5")
+    compile("io.ktor:ktor-server-core:1.2.5")
+    implementation("io.ktor:ktor-gson:1.2.5")
     compile("mbuhot:eskotlin:0.7.0")
     compile("org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.2")
     compile("ch.qos.logback:logback-classic:1.2.3")

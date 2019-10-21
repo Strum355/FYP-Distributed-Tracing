@@ -6,32 +6,28 @@ package xyz.noahsc.topology
 import io.ktor.application.Application
 import io.ktor.application.ApplicationStopped
 import io.ktor.application.ApplicationStarting
+import io.ktor.features.DefaultHeaders
 import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.features.CallLogging
 import io.ktor.features.ContentNegotiation
 import io.ktor.gson.gson
-import io.ktor.http.ContentType
+import io.ktor.http.*
 import io.ktor.response.respond
 import io.ktor.response.respondText
+import io.ktor.response.respondTextWriter
+import io.ktor.request.receive
 import io.ktor.routing.get
+import io.ktor.routing.post
 import io.ktor.routing.routing
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.util.KtorExperimentalAPI
-import mbuhot.eskotlin.query.compound.bool
-import mbuhot.eskotlin.query.term.term
-import mbuhot.eskotlin.query.term.range
-import org.elasticsearch.index.query.TermQueryBuilder
-import org.elasticsearch.client.RestClient
-import org.elasticsearch.client.RestHighLevelClient
-import org.elasticsearch.action.search.SearchRequest
-import org.elasticsearch.search.builder.SearchSourceBuilder
-import org.elasticsearch.client.RequestOptions
-import org.apache.http.HttpHost
+import com.google.gson.Gson
 import org.slf4j.LoggerFactory
 import com.apurebase.kgraphql.KGraphQL
 import xyz.noahsc.topology.data.*
+import xyz.noahsc.topology.repository.ElasticsearchRepository
 import com.google.gson.*
 
 @UseExperimental(KtorExperimentalAPI::class)
@@ -41,74 +37,42 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    val lowLevel = RestClient.builder(HttpHost("elasticsearch", 9200))
-    val client: RestHighLevelClient = RestHighLevelClient(lowLevel)
+    val esRepo = ElasticsearchRepository()
     
+    environment.monitor.subscribe(ApplicationStopped) { esRepo.client.close() }
+    install(DefaultHeaders)
+    install(CallLogging)
     install(ContentNegotiation) {
         gson {
             setPrettyPrinting()
         }
-    }
+    }    
     
-    install(CallLogging) { }
-    
-    environment.monitor.subscribe(ApplicationStopped) { 
-        client.close()
-    }
 
     val schema = KGraphQL.schema { 
         configure { 
             useDefaultPrettyPrinter = true
         }
 
-        query("trace") { 
+        query("findTrace") { 
             resolver { traceID: String ->
-                val query = bool {
-                    must {
-                        term { "traceID" to traceID }
-                    }
-                }
-
-                val resp = client.search(
-                    SearchRequest("jaeger-span-*").source(SearchSourceBuilder().query(query)),
-                    RequestOptions.DEFAULT
-                )
-
-                Trace.fromSearchHits(traceID, resp.hits.hits)
+                esRepo.getTraceByID(traceID)
+            }.withArgs { 
+                arg<String> { name = "traceID"}
             }
         }
     }
 
     
     routing {
-        get("/drivers") {
-            val spanID = call.request.queryParameters["spanID"]
-            val query = bool { 
-                must {
-                    term { "spanID" to spanID!! }
-                }
+        post("/graphql") {
+            try {
+                val body = call.receive<GraphQLBody>()
+                val resp = schema.execute(body.query, Gson().toJson(body.variables))
+                call.respond(resp)
+            } catch(e: HttpStatusException) {
+                call.respondTextWriter(ContentType("application", "json"), e.statusCode) { }
             }
-
-            val request = SearchRequest("jaeger-span-*")
-            val builder = SearchSourceBuilder()
-            builder.query(query)
-            request.source(builder)
-            val resp = client.search(request, RequestOptions.DEFAULT)
-            call.respond(resp.hits.hits.map { it.sourceAsMap })
-        }
-        
-        get("/schema") {
-            //call.respond(schema.execute(call.request.queryParameters["query"]!!))
-            call.respond(schema.execute("""
-            {
-                trace(traceID: "6ebde5170cd7fdb1") {
-                    traceID
-                    spans {
-                        spanID
-                    }
-                }
-            }
-            """))
         }
     }
 }

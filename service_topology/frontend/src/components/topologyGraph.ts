@@ -1,8 +1,10 @@
-import ForceGraph from 'force-graph'
-import { Component, Vue } from 'vue-property-decorator'
+import ForceGraph from 'force-graph';
+import gql from 'graphql-tag';
+import { Component, Vue } from 'vue-property-decorator';
 
-@Component
+@Component({})
 export default class TopologyGraph extends Vue {
+  banana = []
   public mounted() {
     const node1: ForceGraph.GraphNode = {id: 'mysql', name: 'mysql', val: ''}
     const node2: ForceGraph.GraphNode = {id: 'redis', name: 'redis', val: ''}
@@ -27,9 +29,20 @@ export default class TopologyGraph extends Vue {
   }
 
   public async findTrace(event: Event) {
-    const resp = await fetch('/api/schema')
-    const body = await resp.json()
-    console.log(body)
-    console.log((event.srcElement as HTMLInputElement).value)
+    const query = gql`
+      query findTrace($traceID: String!) {
+        findTrace(traceID: $traceID) {
+          traceID
+          spans {
+            spanID
+          }
+        }
+      }
+    `
+    const resp = await this.$apollo.query({query: query, fetchPolicy: 'no-cache', variables: {
+      traceID: (event.srcElement as HTMLInputElement).value
+    }})
+
+    console.log(resp)
   }
 }

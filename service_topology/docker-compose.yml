@@ -55,7 +55,6 @@ services:
     image: jaegertracing/example-hotrod
     container_name: fyp-hotrod
     command: all
-    restart: on-failure
     environment: 
       JAEGER_AGENT_HOST: jaeger
       JAEGER_AGENT_PORT: 6831

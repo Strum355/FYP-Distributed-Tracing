@@ -23,8 +23,14 @@ public data class Span(
 ) {
     companion object {
         fun fromSearchHit(hit: SearchHit): Span {
-            
-            return Span("", "", 1, 1, "", "", emptyArray<LogPoint>().toList<LogPoint>(), emptyArray<Tag>().toList())
+            val source = hit.sourceAsMap
+            val traceID = source.get("traceID") as String
+            val spanID = source.get("spanID") as String
+            val duration = source.get("duration") as Int
+            val startTime = source.get("startTime") as Int
+            val operationName = source.get("operationName") as String
+            val serviceName = source.get("serviceName") as String
+            return Span(traceID, spanID, duration, startTime, operationName, serviceName, emptyArray<LogPoint>().toList<LogPoint>(), emptyArray<Tag>().toList())
         }
     }
 }

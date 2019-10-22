@@ -19,16 +19,16 @@ class ElasticsearchRepository {
     val lowLevel = RestClient.builder(HttpHost("elasticsearch", 9200))
     public val client: RestHighLevelClient = RestHighLevelClient(lowLevel)
 
-
     fun getTraceByID(traceID: String): Trace {
         val query = bool {
             must {
                 term { "traceID" to traceID }
             }
+            
         }
 
         val resp = client.search(
-            SearchRequest("jaeger-span-*").source(SearchSourceBuilder().query(query)),
+            SearchRequest("jaeger-span-*").source(SearchSourceBuilder().query(query).size(1000)),
             RequestOptions.DEFAULT
         )
 

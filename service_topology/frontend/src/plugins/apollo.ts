@@ -8,7 +8,7 @@ import VueApollo from 'vue-apollo'
 // HTTP connection to the API
 const httpLink = createHttpLink({
   // You should use an absolute URL here
-  uri: 'http://frontend.localhost/api/graphql',
+  uri: '/api/graphql',
 })
 
 // Cache implementation

@@ -1,11 +1,14 @@
 export type Trace = {
-
+  traceID: string
+  spans: Span[]
 }
 
 export type Span = {
+  traceID: string
+  spanID: string
+  parentSpanID: string
   duration: number
   startTime: number
-  spanID: string
   operationName: string
   serviceName: string
   logs: LogPoint[]

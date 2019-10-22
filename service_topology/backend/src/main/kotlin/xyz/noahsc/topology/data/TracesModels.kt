@@ -14,10 +14,11 @@ public data class Trace(val traceID: String, val spans: List<Span>) {
 public data class Span(
     val traceID: String,
     val spanID: String,
+    val parentSpanID: String?,
     val duration: Int,
     val startTime: Long,
     val operationName: String,
-    val serviceName: String?,
+    val serviceName: String,
     val logs: List<LogPoint>?,
     val tags: List<Tag>?
 ) {
@@ -29,8 +30,9 @@ public data class Span(
             val duration = source.get("duration") as Int
             val startTime = source.get("startTime") as Long
             val operationName = source.get("operationName") as String
-            val serviceName = source.get("serviceName") as String?
-            return Span(traceID, spanID, duration, startTime, operationName, serviceName, emptyArray<LogPoint>().toList<LogPoint>(), emptyArray<Tag>().toList())
+            val serviceName = (source.get("process") as Map<String, Any>).get("serviceName") as String
+            val parentSpan = (source.get("references") as ArrayList<Map<String, String>>).get(0).get("spanID")
+            return Span(traceID, spanID, parentSpan, duration, startTime, operationName, serviceName, emptyArray<LogPoint>().toList<LogPoint>(), emptyArray<Tag>().toList())
         }
     }
 }

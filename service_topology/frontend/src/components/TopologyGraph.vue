@@ -3,7 +3,7 @@
         <v-container fluid>    
             <v-row>
                 <v-col lg="2" sm="4">
-                    <v-text-field v-on:keyup.enter="findTrace($event)" id="trace-id" label="Trace ID"></v-text-field>
+                    <v-text-field value="6ebde5170cd7fdb1" v-on:keyup.enter="findTrace($event)" id="trace-id" label="Trace ID"></v-text-field>
                 </v-col>
             </v-row>
             <v-row>
@@ -25,7 +25,6 @@ svg {
 #graph {
     display: flex;
     justify-content: center;
-    height: 150%;
     border: 1px solid gainsboro;
 }
 

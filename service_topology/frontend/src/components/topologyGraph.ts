@@ -52,6 +52,9 @@ export default class TopologyGraph extends Vue {
     const nodes = this.computeNodes(trace)
     const links = this.computeLinks(trace)
 
+    /* console.log(nodes)
+    console.log(links) */
+
     this.graph!!.graphData({nodes: nodes, links: links})
   }
 
@@ -70,7 +73,7 @@ export default class TopologyGraph extends Vue {
     // for each unique service, create a node
     for(let span of uniqueSpans) {
       let node: ForceGraph.GraphNode = {
-        id: span.operationName,
+        id: span.spanID,
         name: span.serviceName,
       }
   
@@ -93,7 +96,7 @@ export default class TopologyGraph extends Vue {
     // for all spans that have a parentSpanID, find the node of that parentSpanID
     // and create a link from the node for spanID to that parent node
     for(let span of trace.spans) {
-      if(span.parentSpanID != "0") {
+      if(span.parentSpanID != "0" && span.parentSpanID != undefined) {
         const parentSpan = this.spanToNode.get(span.parentSpanID!!)!!
         const childSpan = this.spanToNode.get(span.spanID)!!
         let link: ForceGraph.GraphLink = {

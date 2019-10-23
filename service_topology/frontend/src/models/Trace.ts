@@ -6,7 +6,7 @@ export type Trace = {
 export type Span = {
   traceID: string
   spanID: string
-  parentSpanID: string
+  parentSpanID?: string
   duration: number
   startTime: number
   operationName: string

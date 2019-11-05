@@ -11,6 +11,7 @@ export default class TopologyGraph extends Vue {
   private spanIDtoSpan: Map<string, Span> = new Map()
   private spanToNode: Map<string, ForceGraph.GraphNode> = new Map()
   private serviceToNode: Map<string, ForceGraph.GraphNode> = new Map()
+  private links: Map<string, ForceGraph.GraphLink> = new Map()
 
   public mounted() {
     this.graph = ForceGraph()(document.getElementById('graph')!!)
@@ -93,20 +94,24 @@ export default class TopologyGraph extends Vue {
   private computeLinks(trace: Trace): ForceGraph.GraphLink[] {
     const links: ForceGraph.GraphLink[] = []
 
+    let i = 0
     // for all spans that have a parentSpanID, find the node of that parentSpanID
     // and create a link from the node for spanID to that parent node
     for(let span of trace.spans) {
       if(span.parentSpanID != "0" && span.parentSpanID != undefined) {
-        const parentSpan = this.spanToNode.get(span.parentSpanID!!)!!
-        const childSpan = this.spanToNode.get(span.spanID)!!
+        const parentSpanNode = this.spanToNode.get(span.parentSpanID!!)!!
+        const childSpanNode = this.spanToNode.get(span.spanID)!!
         let link: ForceGraph.GraphLink = {
-          id: span.spanID,
-          source: parentSpan,
-          target: childSpan,
+          id: (++i).toString(),
+          source: parentSpanNode,
+          target: childSpanNode,
           type: '',
         }
 
-        links.push(link)
+        if(!this.links.has(`${parentSpanNode.name}$${childSpanNode.name}`)) {
+          links.push(link)
+          this.links.set(`${parentSpanNode.name}$${childSpanNode.name}`, link)
+        }
       }
     }
 

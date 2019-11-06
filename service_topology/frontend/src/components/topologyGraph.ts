@@ -1,7 +1,7 @@
-import { Span, Trace } from '@/models/Trace';
-import ForceGraph from 'force-graph';
-import gql from 'graphql-tag';
-import { Component, Vue } from 'vue-property-decorator';
+import { Span, Trace } from '@/models/Trace'
+import ForceGraph from 'force-graph'
+import gql from 'graphql-tag'
+import { Component, Vue, Watch } from 'vue-property-decorator'
 
 @Component({})
 export default class TopologyGraph extends Vue {
@@ -12,6 +12,20 @@ export default class TopologyGraph extends Vue {
   private spanToNode: Map<string, ForceGraph.GraphNode> = new Map()
   private serviceToNode: Map<string, ForceGraph.GraphNode> = new Map()
   private links: Map<string, ForceGraph.GraphLink> = new Map()
+  public trace: Trace | null = null
+
+  public minTime = 0
+  public maxTime = 100
+
+  @Watch('trace')
+  public updateMaxTime(newVal: Trace, oldVal: Trace) {
+    this.maxTime = Math.floor((this.trace!!.spans[this.trace!!.spans.length-1].startTime - this.trace!!.spans[0].startTime)/1000)
+    this.minTime = 0
+  } 
+
+  public onSlide(i: number) {
+    
+  }
 
   public mounted() {
     this.graph = ForceGraph()(document.getElementById('graph')!!)
@@ -36,6 +50,7 @@ export default class TopologyGraph extends Vue {
           traceID
           spans {
             spanID
+            startTime
             serviceName
             parentSpanID
             operationName
@@ -47,11 +62,11 @@ export default class TopologyGraph extends Vue {
       traceID: (event.srcElement as HTMLInputElement).value
     }})
     
-    const trace = resp.data['findTrace'] as Trace
+    this.trace = resp.data['findTrace'] as Trace
 
-    this.populateSpanMap(trace)
-    const nodes = this.computeNodes(trace)
-    const links = this.computeLinks(trace)
+    this.populateSpanMap(this.trace)
+    const nodes = this.computeNodes(this.trace)
+    const links = this.computeLinks(this.trace)
 
     /* console.log(nodes)
     console.log(links) */
@@ -72,8 +87,8 @@ export default class TopologyGraph extends Vue {
     const nodes: ForceGraph.GraphNode[] = []
 
     // for each unique service, create a node
-    for(let span of uniqueSpans) {
-      let node: ForceGraph.GraphNode = {
+    for(const span of uniqueSpans) {
+      const node: ForceGraph.GraphNode = {
         id: span.spanID,
         name: span.serviceName,
       }
@@ -83,8 +98,8 @@ export default class TopologyGraph extends Vue {
     }
 
     // collect all spans and point them to their associated node, currently by serviceName
-    for(let span of trace.spans) {
-      let node = this.serviceToNode.get(span.serviceName)!!
+    for(const span of trace.spans) {
+      const node = this.serviceToNode.get(span.serviceName)!!
       this.spanToNode.set(span.spanID, node)
     }
 
@@ -93,15 +108,16 @@ export default class TopologyGraph extends Vue {
 
   private computeLinks(trace: Trace): ForceGraph.GraphLink[] {
     const links: ForceGraph.GraphLink[] = []
+    this.links.clear()
 
     let i = 0
     // for all spans that have a parentSpanID, find the node of that parentSpanID
     // and create a link from the node for spanID to that parent node
-    for(let span of trace.spans) {
+    for(const span of trace.spans) {
       if(span.parentSpanID != "0" && span.parentSpanID != undefined) {
         const parentSpanNode = this.spanToNode.get(span.parentSpanID!!)!!
         const childSpanNode = this.spanToNode.get(span.spanID)!!
-        let link: ForceGraph.GraphLink = {
+        const link: ForceGraph.GraphLink = {
           id: (++i).toString(),
           source: parentSpanNode,
           target: childSpanNode,

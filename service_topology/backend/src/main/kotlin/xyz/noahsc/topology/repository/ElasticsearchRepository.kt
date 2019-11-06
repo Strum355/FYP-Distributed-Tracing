@@ -24,7 +24,6 @@ class ElasticsearchRepository {
             must {
                 term { "traceID" to traceID }
             }
-            
         }
 
         val resp = client.search(

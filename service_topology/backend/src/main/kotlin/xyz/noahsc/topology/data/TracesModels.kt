@@ -6,7 +6,7 @@ public data class Trace(val traceID: String, val spans: List<Span>) {
     companion object {
         fun fromSearchHits(traceID: String, hits: Array<SearchHit>): Trace {
             val spansArray = hits.map { Span.fromSearchHit(it) }.toTypedArray<Span>()
-            return Trace(traceID, spansArray.toList())
+            return Trace(traceID, spansArray.toList().sortedBy { it.startTime })
         }
     }
 }

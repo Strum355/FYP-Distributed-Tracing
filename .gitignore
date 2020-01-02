@@ -7,3 +7,5 @@ build
 # ignore build outputs
 service_topology/topology
 a.out
+node_modules
+vsc-extension-quickstart.md

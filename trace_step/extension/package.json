@@ -1,0 +1,45 @@
+{
+	"name": "tracestep",
+	"displayName": "tracestep",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.41.0"
+	},
+	"categories": [
+		"Debuggers"
+	],
+	"activationEvents": [
+		"onDebug"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"breakpoints": [
+      {
+        "language": "go"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "tracer",
+        "label": "TraceStep-er",
+        "program": "./out/debugger.js",
+        "runtime": "node"
+
+      }
+    ]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/node": "^12.11.7",
+		"@types/vscode": "^1.41.0",
+		"glob": "^7.1.5",
+		"typescript": "^3.6.4",
+		"tslint": "^5.20.0"
+	}
+}

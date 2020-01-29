@@ -30,6 +30,9 @@ services:
       COLLECTOR_ZIPKIN_HTTP_PORT: 9411
       SPAN_STORAGE_TYPE: elasticsearch
       ES_SERVER_URLS: http://elasticsearch:9200
+    ports:
+      - 6831:6831/udp
+      - 16686:16686
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jaeger.rule=Host(`jaeger.localhost`)"
@@ -65,13 +68,13 @@ services:
     depends_on: 
       - jaeger
     
-  topology:
+  backend:
     build:
       target: dev
-      context: ./backend
+      context: ./service_topology/backend
     container_name: fyp-topology
     volumes: 
-      - ./backend/src:/topology/src
+      - ./service_topology/backend/src:/topology/src
     labels: 
       - "traefik.enable=true"
       - "traefik.http.routers.topology.rule=Host(`backend.localhost`)"
@@ -82,17 +85,17 @@ services:
   
   frontend:
     build: 
-      context: ./frontend
+      context: ./service_topology/frontend
     container_name: fyp-frontend
     volumes: 
-      - ./frontend:/app
+      - ./service_topology/frontend:/app
     labels: 
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`)"
       - "traefik.http.services.frontend.loadbalancer.server.port=8080"    
     depends_on:
       - traefik
-      - topology
+      - backend
 
   traefik:
     image: traefik:2.0

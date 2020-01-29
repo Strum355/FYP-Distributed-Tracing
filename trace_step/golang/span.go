@@ -15,11 +15,12 @@ func WithCallstackOffset(num int) opentracing.StartSpanOption {
 }
 
 type tracerWrapper struct {
+	baseImport string
 	opentracing.Tracer
 }
 
-func NewTracerWrapper(tracer opentracing.Tracer) opentracing.Tracer {
-	return &tracerWrapper{tracer}
+func NewTracerWrapper(baseImport string, tracer opentracing.Tracer) opentracing.Tracer {
+	return &tracerWrapper{baseImport, tracer}
 }
 
 func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
@@ -32,9 +33,18 @@ func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.Star
 
 	pc, file, line, _ := runtime.Caller(1 + offsetAmount)
 	span := t.Tracer.StartSpan(operationName, opts...)
-	pkg := strings.Split(runtime.FuncForPC(pc).Name(), "/")
+	pkg := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	folder := strings.Join(pkg[:len(pkg)-1], ".")
+	//fmt.Printf("pkg>>\n\tbefore: %s\n\tafter: %s\n", runtime.FuncForPC(pc).Name(), , "."))
+	var isMain bool
+	if folder == "main" {
+		isMain = true
+		folder = t.baseImport
+	}
+
 	span.SetTag("_tracestep_file", file)
 	span.SetTag("_tracestep_line", line)
-	span.SetTag("_tracestep_pkg", strings.Join(pkg[:len(pkg)-1], "/"))
+	span.SetTag("_tracestep_pkg", folder)
+	span.SetTag("_tracestep_main", isMain)
 	return span
 }

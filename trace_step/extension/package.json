@@ -1,6 +1,7 @@
 {
 	"name": "tracestep",
 	"displayName": "tracestep",
+	"publisher": "strum355",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
@@ -15,19 +16,50 @@
 	"main": "./out/extension.js",
 	"contributes": {
 		"breakpoints": [
-      {
-        "language": "go"
-      }
-    ],
-    "debuggers": [
-      {
-        "type": "tracer",
-        "label": "TraceStep-er",
-        "program": "./out/debugger.js",
-        "runtime": "node"
-
-      }
-    ]
+			{
+				"language": "go"
+			}
+		],
+		"debuggers": [
+			{
+				"type": "tracestep",
+				"label": "TraceStep",
+				"program": "./out/debugger.js",
+        "runtime": "node",
+        "languages": [
+          "go"
+        ],
+        "configurationSnippets": [
+          {
+            "label": "TraceStep: Trace Spans",
+            "description": "Step through your code using distributed tracing data",
+            "body": {
+              "name": "${1:Start Debug Adapter}",
+              "type": "tracestep",
+              "request": "laumch",
+              "backendUrl": "http://backend.localhost",
+              "mainPath": ""
+            }
+          }
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "backendUrl": {
+                "type": "string",
+                "description": "URL of the GraphQL server that serves traces",
+                "default": "http://backend.localhost"
+              },
+              "mainPath": {
+                "type": "string",
+                "description": "Path to main package",
+                "default": ""
+              }
+            }
+          }
+        }
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -41,5 +73,10 @@
 		"glob": "^7.1.5",
 		"typescript": "^3.6.4",
 		"tslint": "^5.20.0"
+	},
+	"dependencies": {
+		"await-notify": "^1.0.1",
+		"vscode-debugadapter": "^1.37.1",
+		"vscode-debugprotocol": "^1.37.0"
 	}
 }

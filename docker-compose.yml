@@ -98,7 +98,7 @@ services:
       - backend
 
   traefik:
-    image: traefik:2.0
+    image: traefik:2.0.7
     container_name: fyp-traefik
     volumes: 
       - /var/run/docker.sock:/var/run/docker.sock:ro

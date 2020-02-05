@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/Strum355/FYP-2020_Distributed-Tracing/trace_step/golang"
-	"github.com/Strum355/test/pkg"
-	"github.com/opentracing/opentracing-go"
-	"github.com/uber/jaeger-client-go/config"
 	"io"
 	"log"
 	"time"
+
+	tracestep "github.com/Strum355/FYP-2020_Distributed-Tracing/trace_step/golang"
+	borger "github.com/Strum355/test/pkg"
+	"github.com/opentracing/opentracing-go"
+	"github.com/uber/jaeger-client-go"
+	"github.com/uber/jaeger-client-go/config"
 )
 
 var (
@@ -15,44 +17,27 @@ var (
 	tracer2 opentracing.Tracer
 )
 
-func main() {
-	c := config.Configuration{
-		ServiceName: "example1",
-		Reporter: &config.ReporterConfig{
-			LocalAgentHostPort: "localhost:6831",
-		},
-		Sampler: &config.SamplerConfig{
-			Type:  "const",
-			Param: 1.0,
-		},
-	}
+const (
+	stackLength = 10000 * 10000 //completely arbitrary :)
+)
 
+func main() {
 	var (
 		closer1 io.Closer
 		closer2 io.Closer
-		err     error
 	)
 
-	tracer1, closer1, err = c.NewTracer()
-	if err != nil {
-		panic(err)
-	}
+	rep, _ := (&config.ReporterConfig{LocalAgentHostPort: "localhost:6831"}).NewReporter("example1", nil, nil)
+	sampler, _ := (&config.SamplerConfig{Type: "const", Param: 1.0}).NewSampler("example1", nil)
+
+	tracer1, closer1 = jaeger.NewTracer("example1", sampler, rep, jaeger.TracerOptions.MaxTagValueLength(stackLength))
 	defer func() {
 		log.Print(closer1.Close())
 	}()
 
-	c = config.Configuration{
-		ServiceName: "example2",
-		Reporter: &config.ReporterConfig{
-			LocalAgentHostPort: "localhost:6831",
-		},
-		Sampler: &config.SamplerConfig{
-			Type:  "const",
-			Param: 1.0,
-		},
-	}
-
-	tracer2, closer2, _ = c.NewTracer()
+	rep, _ = (&config.ReporterConfig{LocalAgentHostPort: "localhost:6831"}).NewReporter("example2", nil, nil)
+	sampler, _ = (&config.SamplerConfig{Type: "const", Param: 1.0}).NewSampler("example2", nil)
+	tracer2, closer2 = jaeger.NewTracer("example2", sampler, rep, jaeger.TracerOptions.MaxTagValueLength(stackLength))
 	defer func() {
 		log.Print(closer2.Close())
 	}()

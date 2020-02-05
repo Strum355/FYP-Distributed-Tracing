@@ -1,10 +1,18 @@
 package tracestep
 
 import (
-	"github.com/opentracing/opentracing-go"
-	"runtime"
+	"bytes"
+	"reflect"
+	"regexp"
+	"runtime/debug"
 	"strings"
+	"unsafe"
+
+	"github.com/opentracing/opentracing-go"
 )
+
+var scubber1 = regexp.MustCompile(`\((?:0x[a-f0-9]+, )*0x[a-f0-9]+\)`)
+var scrubber2 = regexp.MustCompile(` \+0x[0-9a-f]+`)
 
 type offsetter int
 
@@ -31,20 +39,23 @@ func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.Star
 		}
 	}
 
-	pc, file, line, _ := runtime.Caller(1 + offsetAmount)
 	span := t.Tracer.StartSpan(operationName, opts...)
-	pkg := strings.Split(runtime.FuncForPC(pc).Name(), ".")
-	folder := strings.Join(pkg[:len(pkg)-1], ".")
-	//fmt.Printf("pkg>>\n\tbefore: %s\n\tafter: %s\n", runtime.FuncForPC(pc).Name(), , "."))
+
+	stack := debug.Stack()
+	stackSplit := bytes.Split(stack[:len(stack)-2], []byte("\n"))[5+(offsetAmount*2):]
+	stackBytes := bytes.Join(stackSplit, []byte("\n"))
+	bh := (*reflect.SliceHeader)(unsafe.Pointer(&stackBytes))
+	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
+	stackString = scubber1.ReplaceAllString(stackString, "")
+	stackString = scrubber2.ReplaceAllString(stackString, "")
+	span.SetTag("_tracestep_stack", stackString)
+
 	var isMain bool
-	if folder == "main" {
+	if strings.Split(string(stackSplit[0]), ".")[0] == "main" {
 		isMain = true
-		folder = t.baseImport
 	}
 
-	span.SetTag("_tracestep_file", file)
-	span.SetTag("_tracestep_line", line)
-	span.SetTag("_tracestep_pkg", folder)
 	span.SetTag("_tracestep_main", isMain)
+
 	return span
 }

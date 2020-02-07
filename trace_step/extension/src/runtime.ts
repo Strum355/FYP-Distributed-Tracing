@@ -11,6 +11,7 @@ export class Runtime extends EventEmitter {
   }
 
   public start(program: string) {
+    console.log(`[RUNTIME] started`)
     this.loadSource(program)
     this.step(false)
   }
@@ -23,10 +24,12 @@ export class Runtime extends EventEmitter {
   }
 
   public step(reverse: boolean) {
-    this.run()
+    this.sendEvent('break')
   }
 
-  private run() {
-      
-  }
+  private sendEvent(event: string, ... args: any[]) {
+		setImmediate(_ => {
+			this.emit(event, ...args);
+		});
+	}
 }

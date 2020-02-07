@@ -25,39 +25,39 @@
 				"type": "tracestep",
 				"label": "TraceStep",
 				"program": "./out/debugger.js",
-        "runtime": "node",
-        "languages": [
-          "go"
-        ],
-        "configurationSnippets": [
-          {
-            "label": "TraceStep: Trace Spans",
-            "description": "Step through your code using distributed tracing data",
-            "body": {
-              "name": "${1:Start Debug Adapter}",
-              "type": "tracestep",
-              "request": "laumch",
-              "backendUrl": "http://backend.localhost",
-              "mainPath": ""
-            }
-          }
-        ],
-        "configurationAttributes": {
-          "launch": {
-            "properties": {
-              "backendUrl": {
-                "type": "string",
-                "description": "URL of the GraphQL server that serves traces",
-                "default": "http://backend.localhost"
-              },
-              "mainPath": {
-                "type": "string",
-                "description": "Path to main package",
-                "default": ""
-              }
-            }
-          }
-        }
+				"runtime": "node",
+				"languages": [
+					"go"
+				],
+				"configurationSnippets": [
+					{
+						"label": "TraceStep: Trace Spans",
+						"description": "Step through your code using distributed tracing data",
+						"body": {
+							"name": "${1:Start Debug Adapter}",
+							"type": "tracestep",
+							"request": "laumch",
+							"backendUrl": "http://backend.localhost",
+							"mainPath": ""
+						}
+					}
+				],
+				"configurationAttributes": {
+					"launch": {
+						"properties": {
+							"backendUrl": {
+								"type": "string",
+								"description": "URL of the GraphQL server that serves traces",
+								"default": "http://backend.localhost"
+							},
+							"mainPath": {
+								"type": "string",
+								"description": "Path to main package",
+								"default": ""
+							}
+						}
+					}
+				}
 			}
 		]
 	},

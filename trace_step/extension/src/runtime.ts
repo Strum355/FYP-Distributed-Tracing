@@ -45,6 +45,10 @@ export class Runtime extends EventEmitter {
     return true
   }
 
+  public line(): number {
+    return this.currentLine
+  }
+
   private fireEventsForLine(ln: number): boolean {
     const line = this.sourceLines[ln]
     

@@ -6,11 +6,12 @@ const { Subject } = require('await-notify')
 
 interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   mainPath: string
+  backendUrl: string
 }
 
 export class DebugSession extends LoggingDebugSession {
   private static THREAD_ID = 1
-  private static PATH = '/home/noah/UCC/Year4/FYP/trace_step/examples/exmpl1/cmd/main.go'
+  private static args: launchRequestArguments
 
   private runtime: Runtime
   private configurationDone = new Subject()
@@ -53,7 +54,7 @@ export class DebugSession extends LoggingDebugSession {
 
     this.runtime.on('break', () => {
       console.log(`[DEBUGGER] got break event`)
-      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', DebugSession.PATH))))
+      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', DebugSession.args.mainPath))))
     })
     
     this.runtime.on('end', () => {
@@ -63,7 +64,7 @@ export class DebugSession extends LoggingDebugSession {
 
   protected breakpointLocationsRequest(response: DebugProtocol.BreakpointLocationsResponse, args: DebugProtocol.BreakpointLocationsArguments, request?: DebugProtocol.BreakpointLocationsRequest) {
     response.body.breakpoints = [
-      {line: 26, column: 10}
+      {line: this.runtime.line(), column: 10}
     ]
     this.sendResponse(response)
   }
@@ -88,6 +89,11 @@ export class DebugSession extends LoggingDebugSession {
     this.sendEvent(new InitializedEvent())
   }
 
+  protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments, request?: DebugProtocol.ScopesRequest): void {
+    response.body.scopes = []
+    this.sendResponse(response)
+  }
+
   protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 
 		const startFrame = typeof args.startFrame === 'number' ? args.startFrame : 0;
@@ -98,7 +104,14 @@ export class DebugSession extends LoggingDebugSession {
 
 		response.body = {
 			stackFrames: [
-        new StackFrame(0, "test",new Source(basename(DebugSession.PATH), this.convertDebuggerPathToClient(DebugSession.PATH), undefined, undefined, 'sample-text'), 26),
+        new StackFrame(0, "test",
+          new Source(
+            basename(DebugSession.args.mainPath),
+            this.convertDebuggerPathToClient(DebugSession.args.mainPath),
+            undefined,
+            undefined,
+            'sample-text')
+          , this.runtime.line()),
       ],
 			totalFrames: 1,
 		};
@@ -113,6 +126,7 @@ export class DebugSession extends LoggingDebugSession {
 
   protected async launchRequest(response: DebugProtocol.LaunchResponse, args: launchRequestArguments) {
     await this.configurationDone.wait(1000)
+    DebugSession.args = args
     console.log(`[DEBUGGER] launch args ${JSON.stringify(args)}`)
     this.runtime.start(args.mainPath)
     this.sendResponse(response)

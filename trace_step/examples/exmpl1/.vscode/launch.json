@@ -9,7 +9,7 @@
             "type": "tracestep",
             "request": "launch",
             "backendUrl": "http://backend.localhost",
-            "mainPath": ""
+            "mainPath": "/home/noah/UCC/Year4/FYP/trace_step/examples/exmpl1/cmd/main.go"
         }
     ]
 }

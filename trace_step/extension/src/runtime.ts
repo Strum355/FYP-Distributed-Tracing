@@ -4,14 +4,14 @@ import { readFileSync } from 'fs'
 export class Runtime extends EventEmitter {
   private sourceFile: string = ''
   private sourceLines: string[] = []
-  private currentLine: number = -1
+  private currentLine: number = 0
 
   constructor() {
     super()
   }
 
   public start(program: string) {
-    console.log(`[RUNTIME] started`)
+    console.log(`[RUNTIME] started ${program}`)
     this.loadSource(program)
     this.step(false)
   }
@@ -23,8 +23,38 @@ export class Runtime extends EventEmitter {
     }
   }
 
-  public step(reverse: boolean) {
-    this.sendEvent('break')
+  public step(reverse: boolean): boolean {
+    if(!reverse) {
+      console.log(`[RUNTIME] source lines ${this.sourceLines.length}\n\tChecking forward line ${this.currentLine}\n\t${this.sourceLines[this.currentLine]}`)
+      for(let ln = this.currentLine; ln < this.sourceLines.length; ln++) {
+        if(this.fireEventsForLine(ln)) {
+          this.currentLine = ln+1
+          return true
+        }
+      }
+    } else {
+      console.log(`[RUNTIME] source lines ${this.sourceLines.length}\n\tChecking back line ${this.currentLine}\n\t${this.sourceLines[this.currentLine]}`)
+      for(let ln = this.currentLine; ln >= 0; ln--) {
+        if(this.fireEventsForLine(ln)) {
+          this.currentLine = ln-1
+          return true
+        }
+      }
+    }
+    this.sendEvent('end')
+    return true
+  }
+
+  private fireEventsForLine(ln: number): boolean {
+    const line = this.sourceLines[ln]
+    
+    if(line.length == 0) {
+      return false
+    }
+
+    this.sendEvent('stopOnStep')
+
+    return true
   }
 
   private sendEvent(event: string, ... args: any[]) {

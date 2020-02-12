@@ -1,5 +1,5 @@
 import { basename } from 'path'
-import { Breakpoint, BreakpointEvent, InitializedEvent, LoggingDebugSession, OutputEvent, Source, TerminatedEvent } from 'vscode-debugadapter'
+import { Breakpoint, BreakpointEvent, InitializedEvent, LoggingDebugSession, OutputEvent, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Runtime } from './runtime'
 const { Subject } = require('await-notify')
@@ -10,6 +10,7 @@ interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 export class DebugSession extends LoggingDebugSession {
   private static THREAD_ID = 1
+  private static PATH = '/home/noah/UCC/Year4/FYP/trace_step/examples/exmpl1/cmd/main.go'
 
   private runtime: Runtime
   private configurationDone = new Subject()
@@ -21,7 +22,28 @@ export class DebugSession extends LoggingDebugSession {
 
     this.runtime = new Runtime()
 
+    this.runtime.on('stopOnEntry', () => {
+      console.log('[EVENT] stopOnEntry')
+      this.sendEvent(new StoppedEvent('entry', DebugSession.THREAD_ID))
+    })
+		this.runtime.on('stopOnStep', () => {
+      console.log('[EVENT] stopOnStep')
+			this.sendEvent(new StoppedEvent('step', DebugSession.THREAD_ID));
+    });
+		this.runtime.on('stopOnBreakpoint', () => {
+			console.log('[EVENT] stopOnBreakpoint')
+			this.sendEvent(new StoppedEvent('breakpoint', DebugSession.THREAD_ID));
+		});
+		this.runtime.on('stopOnDataBreakpoint', () => {
+			console.log('[EVENT] stopOnDataBreakpoint')
+			this.sendEvent(new StoppedEvent('data breakpoint', DebugSession.THREAD_ID));
+		});
+		this.runtime.on('stopOnException', () => {
+			console.log('[EVENT] stopOnException')
+			this.sendEvent(new StoppedEvent('exception', DebugSession.THREAD_ID));
+		});
     this.runtime.on('output', (text, filePath, line, column) => {
+      console.log('[EVENT] output')
       const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`)
       e.body.source = this.createSource(filePath)
       e.body.line = this.convertDebuggerLineToClient(line)
@@ -31,12 +53,28 @@ export class DebugSession extends LoggingDebugSession {
 
     this.runtime.on('break', () => {
       console.log(`[DEBUGGER] got break event`)
-      this.sendEvent(new BreakpointEvent('thats why', new Breakpoint(true, 26, 10, new Source('main.go', '/home/noah/UCC/Year4/FYP-2020_Distributed-Tracing/trace_step/examples/exmpl1/main.go'))))
+      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', DebugSession.PATH))))
     })
     
     this.runtime.on('end', () => {
       this.sendEvent(new TerminatedEvent())
     })
+  }
+
+  protected breakpointLocationsRequest(response: DebugProtocol.BreakpointLocationsResponse, args: DebugProtocol.BreakpointLocationsArguments, request?: DebugProtocol.BreakpointLocationsRequest) {
+    response.body.breakpoints = [
+      {line: 26, column: 10}
+    ]
+    this.sendResponse(response)
+  }
+
+  protected threadsRequest(response: DebugProtocol.ThreadsResponse) {
+    response.body = {
+      threads: [
+        new Thread(DebugSession.THREAD_ID, "ebic")
+      ]
+    }
+    this.sendResponse(response)
   }
       
   protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments) {
@@ -44,9 +82,28 @@ export class DebugSession extends LoggingDebugSession {
     response.body = response.body || {}
     response.body.supportsConfigurationDoneRequest = true
     response.body.supportsStepBack = true
+    response.body.supportsBreakpointLocationsRequest = true
+
     this.sendResponse(response)
     this.sendEvent(new InitializedEvent())
   }
+
+  protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
+
+		const startFrame = typeof args.startFrame === 'number' ? args.startFrame : 0;
+		const maxLevels = typeof args.levels === 'number' ? args.levels : 1000;
+		const endFrame = startFrame + maxLevels;
+
+		//const stk = this.runtime.stack(startFrame, endFrame);
+
+		response.body = {
+			stackFrames: [
+        new StackFrame(0, "test",new Source(basename(DebugSession.PATH), this.convertDebuggerPathToClient(DebugSession.PATH), undefined, undefined, 'sample-text'), 26),
+      ],
+			totalFrames: 1,
+		};
+		this.sendResponse(response);
+	}
 
   protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments) {
     super.configurationDoneRequest(response, args)

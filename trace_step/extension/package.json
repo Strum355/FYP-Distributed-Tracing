@@ -26,6 +26,9 @@
 				"label": "TraceStep",
 				"program": "./out/debugger.js",
 				"runtime": "node",
+				"variables": {
+					"AskForTraceID": "extension.tracestep.getTraceID"
+				},
 				"languages": [
 					"go"
 				],
@@ -54,6 +57,11 @@
 								"type": "string",
 								"description": "Path to main package",
 								"default": ""
+							},
+							"traceID": {
+								"type": "string",
+								"description": "Trace ID of the trace to replay",
+								"default": "${command:AskForTraceID}"
 							}
 						}
 					}
@@ -75,7 +83,10 @@
 		"tslint": "^5.20.0"
 	},
 	"dependencies": {
+		"apollo-boost": "^0.4.7",
+		"apollo-client": "^2.6.8",
 		"await-notify": "^1.0.1",
+		"graphql": "^14.6.0",
 		"vscode-debugadapter": "^1.37.1",
 		"vscode-debugprotocol": "^1.37.0"
 	}

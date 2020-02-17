@@ -2,15 +2,20 @@ import * as Net from 'net'
 import * as vscode from 'vscode'
 import { DebugSession } from './session'
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+  context.subscriptions.push(vscode.commands.registerCommand('extension.tracestep.getTraceID', () => {
+		return vscode.window.showInputBox({
+      placeHolder: "Please enter the Trace ID",
+      prompt: "Please enter the Trace ID",
+    })
+  }))
+  
   const config = new ConfigProvider()
   context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('tracestep', config))
 
   const factory = new AdapterFactory()
   context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('tracestep', factory))
-  if('dispose' in factory) {
-    context.subscriptions.push(factory)
-  }
+  context.subscriptions.push(factory)
 }
 
 export function deactivate() {}

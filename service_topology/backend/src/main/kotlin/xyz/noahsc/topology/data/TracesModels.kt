@@ -32,12 +32,14 @@ public data class Span(
             val operationName = source.get("operationName") as String
             val serviceName = (source.get("process") as Map<String, Any>).get("serviceName") as String
             val parentSpan = (source.get("references") as ArrayList<Map<String, String>>).getOrElse(0) { emptyMap() }.get("spanID")
-            return Span(traceID, spanID, parentSpan, duration, startTime, operationName, serviceName, emptyArray<LogPoint>().toList<LogPoint>(), emptyArray<Tag>().toList())
+            val logs = (source.get("logs") as ArrayList<LogPoint>)
+            val tags = (source.get("tags") as ArrayList<Tag>)
+            return Span(traceID, spanID, parentSpan, duration, startTime, operationName, serviceName, logs, tags)
         }
     }
 }
 
-public data class Tag(val key: String, val value: String)
+public data class Tag(val key: String, val type: String, val value: String)
 
 public data class LogPoint(val timestamp: Int, val fields: List<LogPointField>)
 

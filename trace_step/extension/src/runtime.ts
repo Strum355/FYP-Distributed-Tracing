@@ -1,16 +1,19 @@
 import { EventEmitter } from 'events'
 import { readFileSync } from 'fs'
+import { Trace } from './types'
 
 export class Runtime extends EventEmitter {
   private sourceFile: string = ''
   private sourceLines: string[] = []
   private currentLine: number = 0
+  private trace?: Trace
 
   constructor() {
     super()
   }
 
-  public start(program: string) {
+  public start(program: string, trace: Trace) {
+    this.trace = trace
     console.log(`[RUNTIME] started ${program}`)
     this.loadSource(program)
     this.step(false)

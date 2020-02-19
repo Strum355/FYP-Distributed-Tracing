@@ -9,7 +9,7 @@
             "type": "tracestep",
             "request": "launch",
             "backendUrl": "http://backend.localhost/graphql",
-            "mainPath": "${workspaceFolder}/cmd/main.go"
+            "mainPath": "${workspaceFolder}/cmd/"
         }
     ]
 }

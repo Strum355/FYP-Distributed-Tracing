@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { Breakpoint, BreakpointEvent, InitializedEvent, LoggingDebugSession, OutputEvent, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Runtime } from './runtime'
-import { Trace } from "./types"
+import { TraceResponse } from "./types"
 const { Subject } = require('await-notify')
 
 interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
@@ -143,12 +143,14 @@ export class DebugSession extends LoggingDebugSession {
       ignoreFocusOut: true,
     })
 
-    const resp = await client.query<Trace>({
+    const resp = await client.query<TraceResponse>({
       query: gql`
         query findTrace($traceID: String!) {
           findTrace(traceID: $traceID) {
             traceID
             spans {
+              spanID
+              startTime
               tags {
                 key
                 value
@@ -161,7 +163,7 @@ export class DebugSession extends LoggingDebugSession {
       }
     })
     console.log(`[DEBUGGER] GraphQL Response: ${JSON.stringify(resp)}`)
-    this.runtime.start(args.mainPath, resp.data)
+    this.runtime.start(args.mainPath, resp.data.findTrace)
     this.sendResponse(response)
   }
 

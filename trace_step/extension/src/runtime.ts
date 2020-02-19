@@ -14,7 +14,13 @@ export class Runtime extends EventEmitter {
 
   public start(program: string, trace: Trace) {
     this.trace = trace
+
+    this.trace.spans = this.trace.spans.sort((a, b) => a.startTime < b.startTime ? -1 : 1)
+
     console.log(`[RUNTIME] started ${program}`)
+    for(let span of trace.spans) {
+      console.log(`[RUNTIME] span trace:\n${span.startTime} ${span.spanID}\n${span.tags.filter(tag => tag.key == "_tracestep_stack")[0].value}`)
+    }
     this.loadSource(program)
     this.step(false)
   }
@@ -26,9 +32,16 @@ export class Runtime extends EventEmitter {
     }
   }
 
+  private parseStack(spanIdx: number) {
+    let span = this.trace!!.spans[spanIdx]
+    const stack = span.tags.filter(tag => tag.key == "_tracestep_stack")[0].value
+
+    const stackLines = stack.split("\n").reverse().map(s => s.trimLeft())
+  }
+
   public step(reverse: boolean): boolean {
     if(!reverse) {
-      console.log(`[RUNTIME] source lines ${this.sourceLines.length}\n\tChecking forward line ${this.currentLine}\n\t${this.sourceLines[this.currentLine]}`)
+      //console.log(`[RUNTIME] source lines ${this.sourceLines.length}\n\tChecking forward line ${this.currentLine}\n\t${this.sourceLines[this.currentLine]}`)
       for(let ln = this.currentLine; ln < this.sourceLines.length; ln++) {
         if(this.fireEventsForLine(ln)) {
           this.currentLine = ln+1
@@ -36,7 +49,7 @@ export class Runtime extends EventEmitter {
         }
       }
     } else {
-      console.log(`[RUNTIME] source lines ${this.sourceLines.length}\n\tChecking back line ${this.currentLine}\n\t${this.sourceLines[this.currentLine]}`)
+      //console.log(`[RUNTIME] source lines ${this.sourceLines.length}\n\tChecking back line ${this.currentLine}\n\t${this.sourceLines[this.currentLine]}`)
       for(let ln = this.currentLine; ln >= 0; ln--) {
         if(this.fireEventsForLine(ln)) {
           this.currentLine = ln-1

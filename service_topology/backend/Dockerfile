@@ -6,6 +6,8 @@ USER root
 
 COPY . .
 
+RUN gradle compileKotlin
+
 ENTRYPOINT [ "bash", "run.sh" ]
 
 FROM gradle:5.6.2-jdk8 AS builder

@@ -1,6 +1,7 @@
 import ApolloClient from "apollo-boost"
 import gql from "graphql-tag"
 import { basename } from 'path'
+import * as vscode from 'vscode'
 import { Breakpoint, BreakpointEvent, InitializedEvent, LoggingDebugSession, OutputEvent, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Runtime } from './runtime'
@@ -133,7 +134,13 @@ export class DebugSession extends LoggingDebugSession {
     DebugSession.args = args
     console.log(`[DEBUGGER] launch args ${JSON.stringify(args)}`)
     const client = new ApolloClient({
-      uri: "http://backend.localhost/api/graphql"
+      uri: args.backendUrl
+    })
+
+    const traceID = await vscode.window.showInputBox({
+      placeHolder: "Please enter the Trace ID",
+      prompt: "Please enter the Trace ID",
+      ignoreFocusOut: true,
     })
 
     const resp = await client.query<Trace>({
@@ -142,16 +149,18 @@ export class DebugSession extends LoggingDebugSession {
           findTrace(traceID: $traceID) {
             traceID
             spans {
-              tags
-            }
-          }
+              tags {
+                key
+                value
+              }
+           }  
         }
-      `,
+     }`,
       variables: {
-        traceID: args.traceID,
+        traceID: traceID,
       }
     })
-    console.log(JSON.stringify(resp))
+    console.log(`[DEBUGGER] GraphQL Response: ${JSON.stringify(resp)}`)
     this.runtime.start(args.mainPath, resp.data)
     this.sendResponse(response)
   }

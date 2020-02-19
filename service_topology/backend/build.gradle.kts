@@ -25,7 +25,7 @@ dependencies {
     compile("org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.2")
     compile("ch.qos.logback:logback-classic:1.2.3")
     compile("org.apache.logging.log4j:log4j-core:2.12.1")
-    compile("com.apurebase:kgraphql:0.7.0")
+    compile("com.apurebase:kgraphql:0.10.0")
 }
 
 tasks.withType<KotlinCompile>().configureEach {

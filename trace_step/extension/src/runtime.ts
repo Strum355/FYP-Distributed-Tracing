@@ -21,6 +21,9 @@ export class Runtime extends EventEmitter {
     for(let span of trace.spans) {
       console.log(`[RUNTIME] span trace:\n${span.startTime} ${span.spanID}\n${span.tags.filter(tag => tag.key == "_tracestep_stack")[0].value}`)
     }
+
+    this.parseStack(0)
+
     this.loadSource(program)
     this.step(false)
   }
@@ -37,6 +40,9 @@ export class Runtime extends EventEmitter {
     const stack = span.tags.filter(tag => tag.key == "_tracestep_stack")[0].value
 
     const stackLines = stack.split("\n").reverse().map(s => s.trimLeft())
+    for(let i = 0; i+2 < stackLines.length; i += 2) {
+
+    }
   }
 
   public step(reverse: boolean): boolean {

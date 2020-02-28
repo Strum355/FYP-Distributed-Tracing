@@ -9,6 +9,17 @@ export type Span = {
   parentSpanID?: string
   startTime: number
   tags: Tag[]
+  stacktrace: StackTrace
+}
+
+export type StackTrace = {
+  stackFrames: StackFrame[]
+}
+
+export type StackFrame = {
+  packageName: string
+  filename: string
+  line: number
 }
 
 export type Tag = {

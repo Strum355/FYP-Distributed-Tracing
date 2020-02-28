@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events'
 import { readFileSync } from 'fs'
+import { basename } from 'path'
 import { Trace } from './types'
 
 export class Runtime extends EventEmitter {
@@ -12,19 +13,18 @@ export class Runtime extends EventEmitter {
     super()
   }
 
-  public start(program: string, trace: Trace) {
+  public start(mainPath: string, trace: Trace) {
     this.trace = trace
+
+    const base = basename(mainPath)
 
     this.trace.spans = this.trace.spans.sort((a, b) => a.startTime < b.startTime ? -1 : 1)
 
-    console.log(`[RUNTIME] started ${program}`)
-    for(let span of trace.spans) {
-      console.log(`[RUNTIME] span trace:\n${span.startTime} ${span.spanID}\n${span.tags.filter(tag => tag.key == "_tracestep_stack")[0].value}`)
-    }
+    console.log(`[RUNTIME] started ${mainPath}`)
+    
+    const firstFrame = this.trace.spans[this.trace.spans.length-1].stacktrace.stackFrames.reverse()[0]
 
-    this.parseStack(0)
-
-    this.loadSource(program)
+    this.loadSource('')
     this.step(false)
   }
 
@@ -32,16 +32,6 @@ export class Runtime extends EventEmitter {
     if(this.sourceFile !== file) {
       this.sourceFile = file
       this.sourceLines = readFileSync(this.sourceFile).toString().split('\n')
-    }
-  }
-
-  private parseStack(spanIdx: number) {
-    let span = this.trace!!.spans[spanIdx]
-    const stack = span.tags.filter(tag => tag.key == "_tracestep_stack")[0].value
-
-    const stackLines = stack.split("\n").reverse().map(s => s.trimLeft())
-    for(let i = 0; i+2 < stackLines.length; i += 2) {
-
     }
   }
 

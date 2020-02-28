@@ -61,6 +61,14 @@ fun Application.module() {
                 arg<String> { name = "traceID"}
             }
         }
+
+        type<Span> {
+            property<StackTrace>("stacktrace") { 
+                resolver { span ->
+                    StackTrace.fromSpan(span)
+                }
+             }
+        }
     }
 
     

@@ -1,18 +1,26 @@
 package tracestep
 
 import (
-	"bytes"
 	"reflect"
 	"regexp"
 	"runtime/debug"
 	"strings"
 	"unsafe"
 
+	"os"
+	"path/filepath"
+
 	"github.com/opentracing/opentracing-go"
 )
 
-var scubber1 = regexp.MustCompile(`\((?:0x[a-f0-9]+, )*0x[a-f0-9]+\)`)
+var scubber1 = regexp.MustCompile(`\(((?:0x[a-f0-9]+, )*0x[a-f0-9]+)?\)\n`)
 var scrubber2 = regexp.MustCompile(` \+0x[0-9a-f]+`)
+var buildInfo *debug.BuildInfo
+var newlineByte = []byte("\n")[0]
+
+func init() {
+	buildInfo, _ = debug.ReadBuildInfo()
+}
 
 type offsetter int
 
@@ -23,12 +31,11 @@ func WithCallstackOffset(num int) opentracing.StartSpanOption {
 }
 
 type tracerWrapper struct {
-	baseImport string
 	opentracing.Tracer
 }
 
-func NewTracerWrapper(baseImport string, tracer opentracing.Tracer) opentracing.Tracer {
-	return &tracerWrapper{baseImport, tracer}
+func NewTracerWrapper(tracer opentracing.Tracer) opentracing.Tracer {
+	return &tracerWrapper{tracer}
 }
 
 func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
@@ -42,20 +49,31 @@ func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.Star
 	span := t.Tracer.StartSpan(operationName, opts...)
 
 	stack := debug.Stack()
-	stackSplit := bytes.Split(stack[:len(stack)-2], []byte("\n"))[5+(offsetAmount*2):]
-	stackBytes := bytes.Join(stackSplit, []byte("\n"))
-	bh := (*reflect.SliceHeader)(unsafe.Pointer(&stackBytes))
-	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
-	stackString = scubber1.ReplaceAllString(stackString, "")
-	stackString = scrubber2.ReplaceAllString(stackString, "")
-	span.SetTag("_tracestep_stack", stackString)
 
-	var isMain bool
-	if strings.Split(string(stackSplit[0]), ".")[0] == "main" {
-		isMain = true
+	offset := 0
+	for count := 0; count < 5+(offsetAmount*2); count++ {
+		for ; offset < len(stack); offset++ {
+			if stack[offset] == newlineByte {
+				offset++
+				break
+			}
+		}
 	}
 
-	span.SetTag("_tracestep_main", isMain)
+	ex, _ := os.Executable()
+	exPath := filepath.Dir(ex)
+
+	stackBytes := stack[offset:]
+	bh := (*reflect.SliceHeader)(unsafe.Pointer(&stackBytes))
+	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
+	stackString = scubber1.ReplaceAllString(stackString, "\n")
+	stackString = scrubber2.ReplaceAllString(stackString, "")
+	stackString = strings.ReplaceAll(stackString, exPath, "")
+
+	span.SetTag("_tracestep_pkg", buildInfo.Main.Path)
+	span.SetTag("_tracestep_execpath", exPath)
+	span.SetTag("_tracestep_stack", stackString)
+	span.SetTag("_tracestep_lang", "go")
 
 	return span
 }

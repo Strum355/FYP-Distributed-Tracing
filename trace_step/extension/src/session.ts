@@ -1,5 +1,5 @@
-import ApolloClient from "apollo-boost"
-import gql from "graphql-tag"
+import ApolloClient from 'apollo-boost'
+import gql from 'graphql-tag'
 import { basename } from 'path'
 import * as vscode from 'vscode'
 import { Breakpoint, BreakpointEvent, InitializedEvent, LoggingDebugSession, OutputEvent, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
@@ -151,18 +151,25 @@ export class DebugSession extends LoggingDebugSession {
             spans {
               spanID
               startTime
+              stacktrace {
+                stackFrames {
+                  packageName
+                  filename
+                  line
+                }
+              }
               tags {
                 key
                 value
               }
-           }  
-        }
-     }`,
+            }  
+          }
+        }`,
       variables: {
         traceID: traceID,
       }
     })
-    console.log(`[DEBUGGER] GraphQL Response: ${JSON.stringify(resp)}`)
+    console.log(`[DEBUGGER] GraphQL Response: ${JSON.stringify(resp, null, 4)}`)
     this.runtime.start(args.mainPath, resp.data.findTrace)
     this.sendResponse(response)
   }

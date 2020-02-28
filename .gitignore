@@ -9,7 +9,12 @@ service_topology/topology
 a.out
 node_modules
 vsc-extension-quickstart.md
-data
+data/nodes
 *.js
 *.map
 sample.json
+*.log
+*.gz
+*.fls
+*.aux
+*.fdb_latexmk

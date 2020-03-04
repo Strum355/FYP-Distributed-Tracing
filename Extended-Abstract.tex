@@ -83,10 +83,12 @@
         \subsection{Flame Graph}
         By far the most commonly adopted visualization 
         is a style of graph closely modeled after the \textit{flame graph} style, closely resembling Figure~\ref{fig:dappertrace}. An example 
-        of such can be seen in Figure~\ref{fig:jaeger}. Each entry in the graph corresponds to a span in the overall trace tree. They can be
+        of such can be seen in Figure~\ref{fig:jaeger}. Each entry in the graph corresponds to a spa=n in the overall trace tree. They can be
         expanded to provide the logs and tags associated with a given span. The value that can be derived from this visualization has resulted
         in large adoption of the flame graph style in distributed tracing providers and platforms, leading many to consider it the de-facto 
         visualization option for tracing data.
+
+        \medskip
 
         \begin{figure}[htb!]
             \centering
@@ -96,10 +98,29 @@
         \end{figure}
 
         \subsection{Plot Graph}
-        Less commonly found is the traditional \textit{plot graph}, with complete trace duration on the \textit{y}-axis and time on the \textit{x}-axis.
-        This is often complementary to an overview of all collected traces, allowing to choose at a glance to inspect certain traces slow durations.
-        This 
+        Less commonly found is the traditional \textit{plot graph}, with trace duration on the \textit{y}-axis
+        and time on the \textit{x}-axis. This is often complementary to an overview list of all collected traces, which
+        facilitates singling out notably longer in duration traces which may be of particular interest in debugging production
+        slow-downs. 
+
+        \subsection{Service Topology}
+        This was the first section explored as part of the final year project. Since deciding to pursue this type of visualization,
+        it had become more widespread in its adoption between different vendors. Most commonly, a force-directed graph is employed
+        for its aesthetically pleasing properties.
+
+        A basic service topology graph can give a quick overview of the dependencies between different services in a distributed
+        system. However, it has little use outside of making one's boss happy. For developers and administrators to derive tangible
+        value from such a visualization, there is a need for a more dynamic system. The ability to generate views based on arbitrary
+        attributes would allow for users of the system to create more personalized and focused graphs based on their needs,
+        such as grouping by high cardinality fields like end-user IP address, error rates, response times etc.
+
+        The aim of this section of the project was to explore the viablity and value of creating such a system, with the addition
+        of being able to replay individual traces instead of being presented an aggregated view. This took inspiration from the
+        Massachusetts Bay Transit Authority data visualization project, viewable at https://mbtaviz.github.io.
+
+        \subsection{Editor Debugger Integration}
+
 
     \section{Conclusion}
-    
+
 \end{document}

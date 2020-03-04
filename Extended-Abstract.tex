@@ -97,19 +97,19 @@
             \label{fig:jaeger}
         \end{figure}
 
-        \subsection{Plot Graph}
-        Less commonly found is the traditional \textit{plot graph}, with trace duration on the \textit{y}-axis
+        \subsection{Scatter Plot Graph}
+        Less commonly found is the traditional \textit{scatter plot graph}, with trace duration on the \textit{y}-axis
         and time on the \textit{x}-axis. This is often complementary to an overview list of all collected traces, which
         facilitates singling out notably longer in duration traces which may be of particular interest in debugging production
         slow-downs. 
 
         \subsection{Service Topology}
-        This was the first section explored as part of the final year project. Since deciding to pursue this type of visualization,
+        This was the first alternative explored as part of the final year project. Since deciding to pursue this type of visualization,
         it had become more widespread in its adoption between different vendors. Most commonly, a force-directed graph is employed
         for its aesthetically pleasing properties.
 
         A basic service topology graph can give a quick overview of the dependencies between different services in a distributed
-        system. However, it has little use outside of making one's boss happy. For developers and administrators to derive tangible
+        system. However, it has little use outside of making ones boss happy. For developers and administrators to derive tangible
         value from such a visualization, there is a need for a more dynamic system. The ability to generate views based on arbitrary
         attributes would allow for users of the system to create more personalized and focused graphs based on their needs,
         such as grouping by high cardinality fields like end-user IP address, error rates, response times etc.
@@ -118,7 +118,14 @@
         of being able to replay individual traces instead of being presented an aggregated view. This took inspiration from the
         Massachusetts Bay Transit Authority data visualization project, viewable at https://mbtaviz.github.io.
 
-        \subsection{Editor Debugger Integration}
+        \subsection{In-Editor Debugger Integration}
+        This is the second and final alternative explored as part of the project. The goal of this visualization alternative was to
+        experiment with the attaching of runtime information to the tags of spans and processing said data in such a way that in-editor
+        debugging tools can consume it to step through code akin to attaching to a local process using the same debugging tools.
+
+        Unlike traditional debuggers such as the \textit{GNU Project Debugger} (gdb), where stepping through code requires complete
+        halting of program execution, 
+
 
 
     \section{Conclusion}

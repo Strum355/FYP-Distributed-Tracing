@@ -13,7 +13,7 @@
     Modern Internet services are often implemented as complex, large-scale distributed systems. 
     These applications are constructed from collections of software modules that could span many
     thousands of machines across multiple physical facilities. With the rise of modern 
-    Micro-service and Service-Oriented designs, traditional tooling used to monitor application 
+    Micro-Service and Service-Oriented designs, traditional tooling used to monitor application 
     behaviour is no longer viable, especially at scale. To understanding the flow and lifecycle 
     of a unit of work performed in multiple pieces across various components in a distributed system, 
     the concept of Distributed Tracing was born. 
@@ -83,7 +83,7 @@
         \subsection{Flame Graph}
         By far the most commonly adopted visualization 
         is a style of graph closely modeled after the \textit{flame graph} style, closely resembling Figure~\ref{fig:dappertrace}. An example 
-        of such can be seen in Figure~\ref{fig:jaeger}. Each entry in the graph corresponds to a spa=n in the overall trace tree. They can be
+        of such can be seen in Figure~\ref{fig:jaeger}. Each entry in the graph corresponds to a span in the overall trace tree. They can be
         expanded to provide the logs and tags associated with a given span. The value that can be derived from this visualization has resulted
         in large adoption of the flame graph style in distributed tracing providers and platforms, leading many to consider it the de-facto 
         visualization option for tracing data.
@@ -116,7 +116,7 @@
 
         The aim of this section of the project was to explore the viablity and value of creating such a system, with the addition
         of being able to replay individual traces instead of being presented an aggregated view. This took inspiration from the
-        Massachusetts Bay Transit Authority data visualization project, viewable at https://mbtaviz.github.io.
+        Massachusetts Bay Transit Authority (MBTA) data visualization project, viewable at https://mbtaviz.github.io.
 
         \subsection{In-Editor Debugger Integration}
         This is the second and final alternative explored as part of the project. The goal of this visualization alternative was to
@@ -124,10 +124,37 @@
         debugging tools can consume it to step through code akin to attaching to a local process using the same debugging tools.
 
         Unlike traditional debuggers such as the \textit{GNU Project Debugger} (gdb), where stepping through code requires complete
-        halting of program execution, 
+        halting of program execution, using the runtime data attached to trace data allows for after-the-fact, non-blocking stepping
+        through code, at an expectedly lower resolution than what can be achieved through traditional, halting debuggers.
 
+        The end goal for this method is to be able to jump between different services' codebases located on a developers local machine,
+        where each codebase would be a different microservice in a distributed system. 
 
+    \newpage
 
-    \section{Conclusion}
+    \section{Outcomes}
+
+    The extended service topology visualization was the first alternative visualization that was attempted. The hoped outcome for this was 
+    to create a novel way to visualize the timings of events within a trace in relation to other concurrent traces, in ways inspired by 
+    the aforementioned MBTA visualization  project. Unfortunately due to complications in the trialing of libraries and the increase of 
+    3rd party services providing similarly improved visualizations, the decision was made to allocate more resources to pursuing the
+    second idea for visualization.
+
+    For the in-editor debugger integration, it is planned to support both mono-repos (multiple service codebases in a single version-controlled
+    system) as well poly-repos, as well as a multitude of different programming languages. At the time of writing, both Golang and Rust have been
+    trialed, with more extensive attempts made in the former with acceptable results. Current efforts revolve around support for Microsoft's
+    \textit{Visual Studio Code} editor, however future work could involve porting functionality for other editors or \textit{integrated development
+    environments} (IDEs).
+
+    As many languages, especially compiled, do not support retrieving a list of currently defined variables without relying on information baked
+    into the binary, we rely on developers to adequately contextualize their traces and spans with aforementioned tags and log points. These 
+    can be displayed in the debugger panel where one might usually find the stack and heap variables that a traditional debugger would be able
+    to derive.
+
+    Finally, it is hoped that by the end of the project's time period, it will be possible to step through code of polyglottal microservices.
+    As local codebases may be located in a vast variety of locations from developer to developer, there must be a means of mapping the services
+    each span is associated with as well as the location in code of the current span with the local location of the codebase on the developers 
+    machine. For simplicity's sake, the number of edge cases considered will be reduced, with a focus on the green path. 
+
 
 \end{document}

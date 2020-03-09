@@ -59,7 +59,7 @@ export class DebugSession extends LoggingDebugSession {
 
     this.runtime.on('break', () => {
       console.log(`[DEBUGGER] got break event`)
-      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', DebugSession.args.mainPath))))
+      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', this.runtime.sourceFile))))
     })
     
     this.runtime.on('end', () => {
@@ -111,8 +111,8 @@ export class DebugSession extends LoggingDebugSession {
 			stackFrames: [
         new StackFrame(0, "test",
           new Source(
-            basename(DebugSession.args.mainPath),
-            this.convertDebuggerPathToClient(DebugSession.args.mainPath),
+            basename(this.runtime.sourceFile),
+            this.convertDebuggerPathToClient(this.runtime.sourceFile),
             undefined,
             undefined,
             'sample-text')
@@ -169,7 +169,7 @@ export class DebugSession extends LoggingDebugSession {
         traceID: traceID,
       }
     })
-    console.log(`[DEBUGGER] GraphQL Response: ${JSON.stringify(resp, null, 4)}`)
+    
     this.runtime.start(args.mainPath, resp.data.findTrace)
     this.sendResponse(response)
   }

@@ -46,8 +46,8 @@ fun Application.module() {
         gson {
             setPrettyPrinting()
         }
-    }    
-    
+    }
+
 
     val schema = KGraphQL.schema { 
         configure { 

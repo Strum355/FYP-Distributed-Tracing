@@ -9,7 +9,7 @@ import { TraceResponse } from "./types"
 const { Subject } = require('await-notify')
 
 interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-  mainPath: string
+  basePath: string
   backendUrl: string
   traceID: string
 }
@@ -59,7 +59,7 @@ export class DebugSession extends LoggingDebugSession {
 
     this.runtime.on('break', () => {
       console.log(`[DEBUGGER] got break event`)
-      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', this.runtime.sourceFile))))
+      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', this.runtime.sourceFileStack[this.runtime.stackIdx]))))
     })
     
     this.runtime.on('end', () => {
@@ -111,8 +111,8 @@ export class DebugSession extends LoggingDebugSession {
 			stackFrames: [
         new StackFrame(0, "test",
           new Source(
-            basename(this.runtime.sourceFile),
-            this.convertDebuggerPathToClient(this.runtime.sourceFile),
+            basename(this.runtime.sourceFileStack[this.runtime.stackIdx]),
+            this.convertDebuggerPathToClient(this.runtime.sourceFileStack[this.runtime.stackIdx]),
             undefined,
             undefined,
             'sample-text')
@@ -158,10 +158,6 @@ export class DebugSession extends LoggingDebugSession {
                   line
                 }
               }
-              tags {
-                key
-                value
-              }
             }  
           }
         }`,
@@ -170,7 +166,7 @@ export class DebugSession extends LoggingDebugSession {
       }
     })
     
-    this.runtime.start(args.mainPath, resp.data.findTrace)
+    this.runtime.start(args.basePath, resp.data.findTrace)
     this.sendResponse(response)
   }
 

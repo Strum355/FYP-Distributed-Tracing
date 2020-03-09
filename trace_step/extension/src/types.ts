@@ -22,6 +22,12 @@ export type StackFrame = {
   line: number
 }
 
+export const equalStackFrame = (s1: StackFrame, s2: StackFrame): boolean => {
+  return s1.packageName === s2.packageName && 
+    s1.filename === s2.filename &&
+    s1.line == s2.line
+}
+
 export type Tag = {
   key: string
   value: string

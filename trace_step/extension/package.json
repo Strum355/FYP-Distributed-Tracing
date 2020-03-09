@@ -41,7 +41,7 @@
 							"type": "tracestep",
 							"request": "laumch",
 							"backendUrl": "http://backend.localhost",
-							"mainPath": ""
+							"basePath": ""
 						}
 					}
 				],
@@ -53,9 +53,9 @@
 								"description": "URL of the GraphQL server that serves traces",
 								"default": "http://backend.localhost"
 							},
-							"mainPath": {
+							"basePath": {
 								"type": "string",
-								"description": "Path to main package",
+								"description": "Path to base/root of the service",
 								"default": ""
 							},
 							"traceID": {

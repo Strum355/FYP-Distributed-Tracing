@@ -7,6 +7,7 @@ export type Span = {
   traceID: string
   spanID: string
   parentSpanID?: string
+  serviceName: string
   startTime: number
   tags: Tag[]
   stacktrace: StackTrace

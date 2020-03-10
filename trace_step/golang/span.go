@@ -68,7 +68,7 @@ func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.Star
 	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
 	stackString = scubber1.ReplaceAllString(stackString, "\n")
 	stackString = scrubber2.ReplaceAllString(stackString, "")
-	stackString = strings.ReplaceAll(stackString, exPath, "")
+	stackString = strings.ReplaceAll(stackString, exPath+"/", "")
 
 	span.SetTag("_tracestep_pkg", buildInfo.Main.Path)
 	span.SetTag("_tracestep_execpath", exPath)

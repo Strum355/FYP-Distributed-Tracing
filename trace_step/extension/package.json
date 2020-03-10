@@ -15,6 +15,16 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+    "configuration": {
+      "title": "TraceStep",
+      "properties": {
+        "tracestep.mappings": {
+          "type": "object",
+          "description": "",
+          "default": {}
+        }
+      }
+    },
 		"breakpoints": [
 			{
 				"language": "go"

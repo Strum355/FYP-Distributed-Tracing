@@ -9,7 +9,6 @@ import { TraceResponse } from "./types"
 const { Subject } = require('await-notify')
 
 interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-  basePath: string
   backendUrl: string
   traceID: string
 }
@@ -151,12 +150,17 @@ export class DebugSession extends LoggingDebugSession {
             spans {
               spanID
               startTime
+              serviceName
               stacktrace {
                 stackFrames {
                   packageName
                   filename
                   line
                 }
+              }
+              tags {
+                key
+                value
               }
             }  
           }
@@ -166,24 +170,29 @@ export class DebugSession extends LoggingDebugSession {
       }
     })
     
-    this.runtime.start(args.basePath, resp.data.findTrace)
+    this.runtime.start(resp.data.findTrace)
     this.sendResponse(response)
   }
 
-  protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
-    console.log(`[DEBUGGER] next args ${JSON.stringify(args)}`)
-    this.runtime.step(false)
+  protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
+    await this.runtime.step(false)
     this.sendResponse(response)
   }
 
-  protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments) {
-    this.runtime.step(true)
-    console.log(`[DEBUGGER] stepback args ${JSON.stringify(args)}`)
+  protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments) {
+    await this.runtime.step(true)
+    this.sendResponse(response)
+  }
+
+  protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.StepInRequest) {
+    this.sendResponse(response)
+  }
+
+  protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.StepOutRequest) {
     this.sendResponse(response)
   }
 
   protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.Request): void {
-    console.log(`[DEBUGGER] pause args ${JSON.stringify(args)}`)
     this.sendResponse(response)
   }
 

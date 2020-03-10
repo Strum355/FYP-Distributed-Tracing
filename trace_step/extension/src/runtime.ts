@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { window } from 'vscode'
+import * as vscode from 'vscode'
 import { StackFrame, Trace } from './types'
 
 export class Runtime extends EventEmitter {
@@ -28,49 +28,67 @@ export class Runtime extends EventEmitter {
     super()
   }
 
-  public start(basePath: string, trace: Trace) {
+  public async start(trace: Trace) {
     this.trace = trace
-    this.basePath = basePath
-
+    
     this.trace.spans = this.trace.spans.sort((a, b) => a.startTime < b.startTime ? -1 : 1)
+
+    this.basePath = await this.getMappingPath(trace.spans[0].serviceName)
+
     this.trace.spans = this.trace.spans.map(s => {
       s.stacktrace.stackFrames = s.stacktrace.stackFrames.reverse()
       return s
     })
-    console.log(`[RUNTIME] started ${basePath}`)
+    console.log(`[RUNTIME] started ${this.basePath}`)
     console.log(`[RUNTIME] GraphQL Response: ${JSON.stringify(this.trace, null, 4)}`)
     
-    this.loadNextSpan()
+    await this.loadNextSpan()
     this.step(false)
   }
 
-  private loadNextSpan() {
+  private async getMappingPath(service: string): Promise<string> {
+    if(this.mapping.has(service)) {
+      return this.mapping.get(service)!!
+    }
+
+    const mappingConf = vscode.workspace.getConfiguration('tracestep.mappings').get(service) as string | null
+    
+    const mapping = mappingConf == null ? (await vscode.window.showInputBox({
+      prompt: `Please enter absolute path to base of ${service}.`,
+      ignoreFocusOut: true,
+    }))!! : mappingConf!!
+
+    this.mapping.set(service, mapping)
+
+    return mapping
+  }
+
+  private async loadNextSpan() {
     if(this.spanIdx + 1 == this.trace!!.spans.length) {
-      this.sendEvent('end')
-      window.showInformationMessage('Reached final span of trace')
+      this.sendEvent('stopOnStep')
+      vscode.window.showInformationMessage('Reached final span of trace')
       return false
     }
+
     this.spanIdx++
     const span = this.trace!!.spans[this.spanIdx]
     const newFramesCount = span.stacktrace.stackFrames.length
     for(let frame of span.stacktrace.stackFrames) {
       // TODO: trim common prefix/substr?
-      this.sourceFileStack.push(this.getPathFromStackFrame(frame))
+      this.sourceFileStack.push(this.getPathFromStackFrame(await this.getMappingPath(span.serviceName), frame))
       this.framesStack.push(frame)
     }
-
-    /* this.stackIdx++
-    this.loadSource(this.sourceFileStack[this.sourceFileStack.length-newFramesCount]) */
 
     return true
   }
   
-  private getPathFromStackFrame(stack: StackFrame): string {
-    //const sParentFolder = dirname(stack.filename)
-    //const dParentFolder = basename(this.basePath)
+  private getPathFromStackFrame(mappingPath: string, stack: StackFrame): string {
+    // this is a UNIX Only house!
+    if(stack.filename.startsWith('/')) {
+      return stack.filename
+    }
 
-    //const localPath = this.basePath.substring(0, this.basePath.lastIndexOf(sParentFolder)) + stack.filename
-    const localPath = join(this.basePath, stack.filename)
+    const localPath = join(mappingPath, stack.filename)
     return localPath
   }
 
@@ -81,10 +99,10 @@ export class Runtime extends EventEmitter {
     }
   }
 
-  public step(reverse: boolean): boolean {
+  public async step(reverse: boolean): Promise<boolean> {
     if(!reverse) {
       if(this.stackIdx === this.sourceFileStack.length-1) {
-        this.loadNextSpan()
+        await this.loadNextSpan()
       }
       this.stackIdx++
       this.loadSource(this.sourceFileStack[this.stackIdx])

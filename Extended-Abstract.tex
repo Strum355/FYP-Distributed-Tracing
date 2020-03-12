@@ -1,6 +1,7 @@
 \documentclass[pdftex,titlepage]{article}
 
 \author{Noah Santschi-Cooney - 116361061}
+\date{8\textsuperscript{th} March 2020}
 \title{\textbf{Alternative Visualisation of Distributed Tracing data in a complex, large-scale distributed system}}
 
 \usepackage{graphicx}
@@ -43,7 +44,7 @@
         gathering stack frames over time, albeit generally at a much higher level than at the level of individual subroutine calls. 
 
         Figure~\ref{fig:dappertrace} illustrates a trace tree with five spans. Each span is shown to contain 3 specific pieces of
-        metadata alongside the start and end timestamps necessarly to reconstruct the temporal relationships: a human-readable
+        metadata alongside the start and end timestamps necessarily to reconstruct the temporal relationships: a human-readable
         \textit{span name}, an integer \textit{span ID} and an integer \textit{parent ID}. The latter two
         data points are used to reconstruct the relationship between individual spans. A span without a parent ID becomes the 
         \textit{root span} of a trace tree. Not shown is another important but, as of right now, not relevant piece of metadata, the 
@@ -80,7 +81,7 @@
     \section{Visualizations of Distributed Tracing Data}
     All this telemetry data would be of little use if it wasn't consumed in some manner. As distributed tracing has only become a more
     prominent topic in the industry in the last half decade, the set of visualizations that exist and are commonly employed is still rather
-    small in numer. In this section, we will discuss some of the most common forms of visualizations, leading up to the methods explored 
+    small in number. In this section, we will discuss some of the most common forms of visualizations, leading up to the methods explored 
     in this project.
     
         \subsection{Flame Graph}
@@ -118,7 +119,7 @@
         attributes would allow for users of the system to create more personalized and focused graphs based on their needs,
         such as grouping by high cardinality fields like end-user IP address, error rates, response times etc\cite{doingitwrongtopo}.
 
-        The aim of this section of the project was to explore the viablity and value of creating such a system, with the addition
+        The aim of this section of the project was to explore the viability and value of creating such a system, with the addition
         of being able to replay individual traces instead of being presented an aggregated view. This took inspiration from the
         Massachusetts Bay Transit Authority (MBTA) data visualization project\cite{mbta}.
 

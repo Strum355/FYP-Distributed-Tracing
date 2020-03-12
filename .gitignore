@@ -18,3 +18,4 @@ sample.json
 *.fls
 *.aux
 *.fdb_latexmk
+*.toc

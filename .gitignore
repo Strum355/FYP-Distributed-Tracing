@@ -19,3 +19,4 @@ sample.json
 *.aux
 *.fdb_latexmk
 *.toc
+*.out

@@ -1,7 +1,11 @@
 \documentclass[12pt,pdftex,titlepage]{report}
 
-\author{Noah Santschi-Cooney\\\\\\\small{Jason Quinlan}\\\\\small{University College Cork}}
-\title{\textbf{Alternative Visualisation of Distributed Tracing data in a complex, large-scale distributed system}}
+\author{\textbf{Noah Santschi-Cooney}
+\\\\\\\small{Final Year Project - BSc in Computer Science}
+\\\\\\\small{Jason Quinlan}
+\\\\\\\small{Department of Computer Science}
+\\\small{University College Cork}}
+\title{\textbf{Alternative Visualisations of Distributed Tracing data in a complex, large-scale distributed system}}
 \date{\vfill\small{3rd April 2020}}
 
 \usepackage[utf8]{inputenc}
@@ -12,7 +16,15 @@
 \graphicspath{{./assets/}}
 
 \PassOptionsToPackage{hyphens}{url}\usepackage{url}
-\usepackage{microtype}
+\usepackage{microtype, caption, copyrightbox, textcomp}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
 
 \makeatletter
 \def\@makechapterhead#1{%
@@ -96,62 +108,136 @@
                 \caption{Evolution of concurrent systems.}
                 \label{fig:concurrency}
             \end{figure}
+        
+        \section{Debuggers}
+            In traditional single process applications, debugger tools, both standalone and bundled with integrated development environments (IDEs), are invaluable in their
+            use of isolating bugs in codebases of any size. They have the capability to give complete overview of stack and heap allocated variables as well as being able to set
+            breakpoints to step through code. Figure~\ref{fig:debugger} highlights the various insights and utilities provided by such tools, including the display of call stacks,
+            local and global variables as well as various utilities to step through code at the line and function levels.
+
+            \begin{figure}[hbt!]
+                \centering
+                \includegraphics[scale=0.335]{debugger}
+                \captionsetup{width=0.8\linewidth}
+                \caption{Screenshot of the Visual Studio Code debugger in action. Clockwise, shown are an expandable list of local and global variables, the currently open file view
+                with the line currently halted on highlighted along with controls for stepping and finally the function call stack.}
+                \label{fig:debugger}
+            \end{figure}
+            
+            However, it's often infeasible to use them in production scenarios due to their nature of halting complete execution of the process.
+            This makes it unsuitable for debugging issues that manifest in production that developers are finding it difficult to reproduce in development scenarios, as is often
+            a common scenario due to subtle parity differences between development and production systems. Such 
 
         \section{Distributed Tracing}
             As traditional tooling is not designed to accommodate for this distributed concurrency system, new methodologies were needed to regain observability into the systems.
             Observing single systems individually, as was done with traditional tooling, no longer painted the full picture of a request as it travels through multiple system 
-            components. There was a need for a system to reconstruct a request from a series of event streams from each component involved in the request, building a causality
-            graph from a request-centric point of view. 
+            components. Distributed tracing systems and platforms build upon the concepts of reconstructing a request from a series of event streams from each component involved
+            in the request, with distributed context propagation and aggregation, building causality graphs from a request-centric point of view.
+
+            \begin{figure}[hbt!]
+                \centering
+                \copyrightbox[r]{
+                    \includegraphics[scale=1.7]{distributed}
+                }{\tiny{\textcopyright Nic Munroe "Hit the Ground Running with Distributed Tracing Core Concepts" on Medium}}
+                \captionsetup{width=0.8\linewidth}
+                \caption{Depiction of a complex distributed system with much inter-connectivity between services.}
+                \label{fig:dist}
+            \end{figure}
+
+            Code is instrumented at various points of interest, recording annotated events with metadata such as the user ID associated with the request, SQL statements being 
+            executed on a database etc. These events are often shipped to a collector/exporter, from which they are either stored in a database or sent to a hosted vendor, such as
+            LightStep or Honeycomb, after which they can be queried, retrieved and displayed.
+
+        \section{Motivation}
+            As distributed tracing is still a relatively new idea and only as of recently gathering mainstream interest in the industry, research and advancements on the topic are 
+            as of yet still sparse. Current vendors often provide a limit set of capabilities and operations that can be performed on the data output from instrumented distributed systems,
+            most commonly simple expandable \textit{gantt charts} or, less commonly, simple, mostly static service dependency graphs that offer little value and utility.
+
+            To further research in this field, the project will attempt to explore alternative and hopefully improved ways of consuming and presenting the data from instrumented
+            applications. Two ideas were planned to be explored and, if possible, implemented as proof of concepts:
+
+            \begin{itemize}
+                \item Advancements in Service Topology/Dependency graphs
+                \item Editor Debugger integration                
+            \end{itemize}
+
+            The viability and findings of both explored options will be discussed 
+
+        \section{Project Summary}
+            This project builds upon the concepts of distributed tracing, exploring ways to provide novel and high-value derivable ways of visualizing and presenting distributed tracing
+            data to developers. We will utilize modern standards, tools and integrations to test the viability of less common and unexplored visualizations of distributed tracing data.
+
+            In Chapter 2, we will introduce the history of distributed tracing, while also covering some common vocabulary relevant to the topic and where they originated. It will also
+            cover some of the standards that this project builds around. In Chapter 3, the project architecture design choices will be discussed and how they impacted the project, ranging
+            from the frontend frameworks chosen to the backend API and supporting services that power the various implementations. Finally, the different visualizations will be evaluated
+            on the value the provide as well as the feasibility of utilizing them in real-world scenarios. Chapters 5 and 6 will draw the writeup to a conclusion, detailing the closing
+            thoughts and putting forward ideas for future work on the ideas explored in this project.
 
     \chapter{Background}
-        \section{Dapper}
-        Released in April 2010, Google published a paper describing the design decisions behind an in-house implementation 
-        of distributed tracing, named Dapper. It is commonly believed that this paper describes the common ancestor to 
-        many tools that implement a form of distributed tracing.
+        \section{History}
+            \subsection{Dapper}
+                Released in April 2010, Google published a paper describing the design decisions behind an in-house implementation 
+                of distributed tracing, named Dapper. It is commonly believed that this paper describes the common ancestor to 
+                many tools that implement a form of distributed tracing.
 
-        The Dapper paper introduces some of the core primitives that underpin modern day standards. Most notable are the concepts
-        of a directed acyclic graph (DAG) called a \textit{trace tree} and its nodes, which are referred to as \textit{spans}. 
-        The trace tree forms a relationship between spans, not unakin to a tree of stack frames that may be generated by
-        gathering stack frames over time, albeit generally at a much higher level than at the level of individual subroutine calls. 
+                The Dapper paper introduces some of the core primitives that underpin modern day standards. Most notable are the concepts
+                of a directed acyclic graph (DAG) called a \textit{trace tree} and its nodes, which are referred to as \textit{spans}. 
+                The trace tree forms a relationship between spans, not unakin to a tree of stack frames that may be generated by
+                gathering stack frames over time, albeit generally at a much higher level than at the level of individual subroutine calls. 
 
-        Figure~\ref{fig:dappertrace} illustrates a trace tree with five spans. Each span is shown to contain 3 specific pieces of
-        metadata alongside the start and end timestamps necessarily to reconstruct the temporal relationships: a human-readable
-        \textit{span name}, an integer \textit{span ID} and an integer \textit{parent ID}. The latter two
-        data points are used to reconstruct the relationship between individual spans. A span without a parent ID becomes the 
-        \textit{root span} of a trace tree. Not shown is another important but, as of right now, not relevant piece of metadata, the 
-        \textit{trace ID}, which is common amongst all spans within a single trace tree.
+                Figure~\ref{fig:dappertrace} illustrates a trace tree with five spans. Each span is shown to contain 3 specific pieces of
+                metadata alongside the start and end timestamps necessarily to reconstruct the temporal relationships: a human-readable
+                \textit{span name}, an integer \textit{span ID} and an integer \textit{parent ID}. The latter two
+                data points are used to reconstruct the relationship between individual spans. A span without a parent ID becomes the 
+                \textit{root span} of a trace tree. Not shown is another important but, as of right now, not relevant piece of metadata, the 
+                \textit{trace ID}, which is common amongst all spans within a single trace tree.
 
-        \begin{figure}[htb!]
-            \centering
-            \includegraphics[scale=0.9]{dappertrace}
-            \caption{The relationships between traces in a trace tree.}
-            \label{fig:dappertrace}
-        \end{figure}
+                \begin{figure}[htb!]
+                    \centering
+                    \includegraphics[scale=0.9]{dappertrace}
+                    \caption{The relationships between traces in a trace tree.}
+                    \label{fig:dappertrace}
+                \end{figure}
 
-        As described thus far, Dapper trace trees allow for a detailed view of the relationships of distributed systems within
-        Google. When using this data for debugging or performance analysis, it can often be convenient or even necessary to 
-        have additional context surrounding a trace tree or its individual spans. As such, the paper describes a simple API 
-        through which application developers can provide a combination of two types of annotations: timestamped textual annotations
-        and key-value, allowing for defining arbitrary equivalence classes between traces which can be operated upon in the analysis
-        tools.
+                As described thus far, Dapper trace trees allow for a detailed view of the relationships of distributed systems within
+                Google. When using this data for debugging or performance analysis, it can often be convenient or even necessary to 
+                have additional context surrounding a trace tree or its individual spans. As such, the paper describes a simple API 
+                through which application developers can provide a combination of two types of annotations: timestamped textual annotations
+                and key-value, allowing for defining arbitrary equivalence classes between traces which can be operated upon in the analysis
+                tools.
 
-        \section{OpenTracing}
-        OpenTracing\cite{opentracing} project's inception came about in October 2015, it has since become a project under the 
-        Cloud Native Computing Foundation in 2016, created to standardize a set of vendor neutral and programming language agnostic
-        application programming interfaces (APIs) for instrumenting code for distributed tracing. Heavily inspired by the Dapper
-        paper, it borrows many of the nouns and verbs outlined in the Dapper paper, including \textit{traces} and \textit{spans}.
-        Dapper's timestamped annotations are referred to as \textit{logs} in the OpenTracing specification, while the key-value pairs
-        are named \textit{tags}. 
+            \subsection{OpenTracing}
+                OpenTracing\cite{opentracing} project's inception came about in October 2015, it has since become a project under the 
+                Cloud Native Computing Foundation in 2016, created to standardize a set of vendor neutral and programming language agnostic
+                application programming interfaces (APIs) for instrumenting code for distributed tracing. Heavily inspired by the Dapper
+                paper, it borrows many of the nouns and verbs outlined in the Dapper paper, including \textit{traces} and \textit{spans}.
+                Dapper's timestamped annotations are referred to as \textit{logs} in the OpenTracing specification, while the key-value pairs
+                are named \textit{tags}. 
 
-        The OpenTracing API also specifies how a trace cross process boundaries, so that spans created in different processes can be
-        associated with a common trace tree. This was named the \textit{span context} and at it's most basic level contains the 
-        overlying trace ID as well as the current span ID. With this, new spans generated across process boundaries have the ability to
-        to specify their parent span as well as their common trace, without propagating an entire span, which may prove costly as more
-        tags and logs are attached to a span.
+                The OpenTracing API also specifies how a trace cross process boundaries, so that spans created in different processes can be
+                associated with a common trace tree. This was named the \textit{span context} and at it's most basic level contains the 
+                overlying trace ID as well as the current span ID. With this, new spans generated across process boundaries have the ability to
+                to specify their parent span as well as their common trace, without propagating an entire span, which may prove costly as more
+                tags and logs are attached to a span.
+
+            \subsection{OpenTelemetry}
     
+    \chapter{Design \& Implementation}
+
+        \section{Architecture Design}
+
+        \section{Backend API}
+
+        \section{Service Topology Frontend}
+
+        \section{Debug Adapter}
+
+    \chapter{Evaluation}
     
     \chapter{Conclusion}
     
+    \chapter{Future Work}
+
     \begin{thebibliography}{69}
         \addcontentsline{toc}{chapter}{Bibliography}    
 

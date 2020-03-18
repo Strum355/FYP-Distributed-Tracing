@@ -126,7 +126,7 @@
             
             However, it's often infeasible to use them in production scenarios due to their nature of halting complete execution of the process.
             This makes it unsuitable for debugging issues that manifest in production that developers are finding it difficult to reproduce in development scenarios, as is often
-            a common scenario due to subtle parity differences between development and production systems. Such 
+            a common scenario due to subtle parity differences between development and production systems.
 
         \section{Distributed Tracing}
             As traditional tooling is not designed to accommodate for this distributed concurrency system, new methodologies were needed to regain observability into the systems.
@@ -138,7 +138,9 @@
                 \centering
                 \copyrightbox[r]{
                     \includegraphics[scale=1.7]{distributed}
-                }{\tiny{\textcopyright Nic Munroe "Hit the Ground Running with Distributed Tracing Core Concepts" on Medium}}
+                }{
+                    \tiny{\textcopyright Nic Munroe "Hit the Ground Running with Distributed Tracing Core Concepts" on Medium}
+                }
                 \captionsetup{width=0.8\linewidth}
                 \caption{Depiction of a complex distributed system with much inter-connectivity between services.}
                 \label{fig:dist}
@@ -148,10 +150,10 @@
             executed on a database etc. These events are often shipped to a collector/exporter, from which they are either stored in a database or sent to a hosted vendor, such as
             LightStep or Honeycomb, after which they can be queried, retrieved and displayed.
 
-        \section{Motivation}
+        \section{Motivation \& Goals}
             As distributed tracing is still a relatively new idea and only as of recently gathering mainstream interest in the industry, research and advancements on the topic are 
             as of yet still sparse. Current vendors often provide a limit set of capabilities and operations that can be performed on the data output from instrumented distributed systems,
-            most commonly simple expandable \textit{gantt charts} or, less commonly, simple, mostly static service dependency graphs that offer little value and utility.
+            most commonly simple expandable \textit{gantt charts} or, less commonly, simple, mostly static, service dependency graphs that offer little value and utility.
 
             To further research in this field, the project will attempt to explore alternative and hopefully improved ways of consuming and presenting the data from instrumented
             applications. Two ideas were planned to be explored and, if possible, implemented as proof of concepts:
@@ -161,7 +163,9 @@
                 \item Editor Debugger integration                
             \end{itemize}
 
-            The viability and findings of both explored options will be discussed 
+            % TODO:
+            The viability and findings of both explored options will be discussed, with performance benchmarks where relevant being presented to highlight the feasibility of different
+            approaches 
 
         \section{Project Summary}
             This project builds upon the concepts of distributed tracing, exploring ways to provide novel and high-value derivable ways of visualizing and presenting distributed tracing
@@ -194,7 +198,7 @@
 
                 \begin{figure}[htb!]
                     \centering
-                    \includegraphics[scale=0.9]{dappertrace}
+                    \includegraphics[scale=1]{dappertrace}
                     \caption{The relationships between traces in a trace tree.}
                     \label{fig:dappertrace}
                 \end{figure}
@@ -220,11 +224,47 @@
                 to specify their parent span as well as their common trace, without propagating an entire span, which may prove costly as more
                 tags and logs are attached to a span.
 
+                Figure~\ref{fig:opentracing} shows a timeline based visualization of where the different components of the OpenTracing API interface are utilized in
+                the larger picture of creating a span through use of distributed context propagation in the span context
+
+                \begin{figure}[hbt!]
+                    \centering
+                    \copyrightbox[r]{
+                        \includegraphics[scale=0.5]{opentracing}
+                    }{\tiny{\textcopyright OpenTracing "OpenTracing Overview"}}
+                    \captionsetup{width=0.8\linewidth}
+                    \caption{Infographic visualizing the different components that make up the OpenTracing API interface and how they relate to different services
+                    and the network}
+                    \label{fig:opentracing}
+                \end{figure}
+
             \subsection{OpenTelemetry}
-    
+                The OpenTelemetry\cite{opentelemetry} project comes about as a result of the merging of two previous projects, namely the previously mentioned OpenTracing
+                project as well as OpenCensus project. The OpenCensus project originated from Google and had many similar goals to OpenTracing. Alongside having an interface
+                for distributed tracing gathering, it also supported instrumenting applications to output application metrics data. To reduce the fragmentation in having
+                two independent APIs for distributed tracing, the two projects decided to merge into one standard going forward. At the time of writing, support for OpenTelemetry
+                is still very sparse, due to the fact that it is still a very new specification set, while still being largely backwards compatible with both OpenTracing and 
+                OpenCensus.
+
     \chapter{Design \& Implementation}
+        \small{In this section, we will cover the different technical aspects, design decisions and components that played a role throughout the projects lifecycle.
+        This will include third party services and the roles they played.}
 
         \section{Architecture Design}
+            \section{Distributed Tracing API}
+            The OpenTracing API interface was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
+            source tooling built around the OpenTracing API. It is also widely supported by many third party vendors, including LightStep, DataDog and Honeycomb amongst 
+            numerous others. 
+
+            OpenTelemetry was initially considered as an alternative choice instead of OpenTracing, but was ultimately decided against due to it still being a very new
+            standard, with OpenTracing having much more comprehensive support from both application libraries and distributed tracing tools.
+
+            \subsection{Backing Services}
+            As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
+            Firstly, we will need a way of collecting trace data from applications. We will be using 
+            
+            we have a primary database in which these traces will be persisted. 
+
 
         \section{Backend API}
 
@@ -256,5 +296,10 @@
         Benjamin H. Sigelman (co creator), \textit{The OpenTracing project.}
         October 2015 \\
         \url{https://opentracing.io/}
+
+        \bibitem{opentelemetry}
+        OpenTelemetry Authors, \textit{The OpenTelemetry Project.} 
+        19th April 2019 \\
+        \url{https://opentelemetry.io/}
     \end{thebibliography}
 \end{document}

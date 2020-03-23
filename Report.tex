@@ -8,6 +8,7 @@
 \title{\textbf{Alternative Visualisations of Distributed Tracing data in a complex, large-scale distributed system}}
 \date{\vfill\small{3rd April 2020}}
 
+\usepackage[dvipsnames]{xcolor}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \pagenumbering{roman}
@@ -16,14 +17,28 @@
 \graphicspath{{./assets/}}
 
 \PassOptionsToPackage{hyphens}{url}\usepackage{url}
-\usepackage{microtype, caption, copyrightbox, textcomp}
-\usepackage{hyperref}
+\usepackage{microtype, caption, copyrightbox, textcomp, hyperref, listings, assets/listings-golang}
+\captionsetup[lstlisting]{font={footnotesize},width=0.8\linewidth}
+\captionsetup[figure]{font={footnotesize},width=0.8\linewidth}
+
 \hypersetup{
     colorlinks,
     citecolor=black,
     filecolor=black,
     linkcolor=black,
     urlcolor=black
+}
+\lstset{
+    frame=leftline,
+    basicstyle=\scriptsize\ttfamily,
+    keywordstyle=\color{Blue},
+    numbers=left,
+    numbersep=5pt,
+    showstringspaces=false, 
+    stringstyle=\color{ForestGreen},
+    commentstyle=\color{gray},
+    tabsize=4,
+    language=Go
 }
 
 \makeatletter
@@ -70,7 +85,11 @@
             \item with respect to another’s work: all text, diagrams, code, or ideas, whether verbatim, paraphrased or otherwise modified or adapted, 
             have been duly attributed to the source in a scholarly manner, whether from books, papers, lecture notes or any other student’s work, whether
             published or unpublished, electronically or in print.
-        \end{itemize}
+        \end{itemize}   
+        \vspace{10mm}
+        Signed: \dotfill
+        \\\\
+        Date: \dotfill
 
     \chapter*{Acknowledgements}
         \addcontentsline{toc}{chapter}{Acknowledgements}
@@ -118,7 +137,6 @@
             \begin{figure}[hbt!]
                 \centering
                 \includegraphics[scale=0.335]{debugger}
-                \captionsetup{width=0.8\linewidth}
                 \caption{Screenshot of the Visual Studio Code debugger in action. Clockwise, shown are an expandable list of local and global variables, the currently open file view
                 with the line currently halted on highlighted along with controls for stepping and finally the function call stack.}
                 \label{fig:debugger}
@@ -141,7 +159,6 @@
                 }{
                     \tiny{\textcopyright Nic Munroe "Hit the Ground Running with Distributed Tracing Core Concepts" on Medium}
                 }
-                \captionsetup{width=0.8\linewidth}
                 \caption{Depiction of a complex distributed system with much inter-connectivity between services.}
                 \label{fig:dist}
             \end{figure}
@@ -232,34 +249,101 @@
                     \copyrightbox[r]{
                         \includegraphics[scale=0.5]{opentracing}
                     }{\tiny{\textcopyright OpenTracing "OpenTracing Overview"}}
-                    \captionsetup{width=0.8\linewidth}
                     \caption{Infographic visualizing the different components that make up the OpenTracing API interface and how they relate to different services
                     and the network}
                     \label{fig:opentracing}
                 \end{figure}
 
+                As there are multiple output sinks which can consume OpenTracing data, from self hosting services such as Jaeger to hosted vendors like LightStep, and given that
+                different platforms may have different, vendor-specific options for operations such as access control, authorization etc, vendors provide different mechanisms
+                and attributes for creating instances of OpenTracing API \textit{tracers} implementations.
+
+% Latex expects everything on one indentation level? very sad
+                \begin{lstlisting}[caption={Example Golang snippet of instatiating a Datadog OpenTracing compatible tracer.}]
+package main
+
+import (
+    "gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
+    "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
+    "github.com/opentracing/opentracing-go"
+)
+
+// Start a Datadog tracer, optionally providing a set of options,
+// returning an opentracing.Tracer which wraps it.
+t := opentracer.New(
+    tracer.WithAgentAddr("host:port"),
+    tracer.WithServiceName("sample-text"))
+
+    // Use it with the OpenTracing API, setting it as global.
+opentracing.SetGlobalTracer(t)
+                \end{lstlisting}
+
+                \newpage
+                \begin{lstlisting}[caption={Example Golang snippet of instatiating a Jaeger OpenTracing compatible tracer.}]
+package main
+
+import (
+    "github.com/uber/jaeger-client-go"
+    "github.com/uber/jaeger-client-go/transport"
+    "github.com/opentracing/opentracing-go"
+)
+
+// Start a Jaeger tracer, supplying the sampling strategy and the
+// reporter configuration.
+t, closer := jaeger.NewTracer(
+    "sample-text",
+    jaeger.NewConstSampler(true),
+    jaeger.NewRemoteReporter(transport.NewHTTPTransport("host:port")))
+defer closer.Close()
+
+// Use it with the OpenTracing API, setting it as global.
+opentracing.SetGlobalTracer(t)                    
+                \end{lstlisting}
+
             \subsection{OpenTelemetry}
-                The OpenTelemetry\cite{opentelemetry} project comes about as a result of the merging of two previous projects, namely the previously mentioned OpenTracing
+                The OpenTelemetry\cite{opentelemetry} project came about as a result of the merging of two previous projects, namely the previously mentioned OpenTracing
                 project as well as OpenCensus project. The OpenCensus project originated from Google and had many similar goals to OpenTracing. Alongside having an interface
                 for distributed tracing gathering, it also supported instrumenting applications to output application metrics data. To reduce the fragmentation in having
                 two independent APIs for distributed tracing, the two projects decided to merge into one standard going forward. At the time of writing, support for OpenTelemetry
                 is still very sparse, due to the fact that it is still a very new specification set, while still being largely backwards compatible with both OpenTracing and 
-                OpenCensus.
+                OpenCensus, providing API bridges to maintain compatibility. 
+
+                The OpenTelemetry API improves upon OpenTracing by introducing a set specification for context propagating header keys used to identify specific values, created
+                as a W3C specification. In OpenTracing API implementations, different vendors would use different keys to denote values such as the trace ID etc in, for example, 
+                HTTP headers. This would break the context chain if different codebases used different vendor implementations in a service dependency graph. By demoting vendor
+                libraries to providing simple \textit{exporters} that define how distributed tracing data is exported to backend systems rather than having them provide
+                tracer implementations like the way it was done with the OpenTracing API, the OpenTelemetry project achieves a better level of interoperability between codebases, 
+                where the OpenTelemetry \textit{collector} can act as the common sink for the different services, becoming the source of truth regarding the eventual backend system
+                to which the distributed tracing data will be exported to.
+
+                \begin{figure}[hbt!]
+                    \centering
+                    \copyrightbox[r]{
+                        \includegraphics[scale=0.5]{opentelemetry-exporter}
+                    }{\tiny{\textcopyright{LightStep "OpenTelemetry 101: What is an Exporter?"}}}
+                    \caption{A high level overview of a typical OpenTelemetry setup, with services hooking into the OpenTelemetry SDK to output telemetry to
+                    OpenTelemetry Collectors, which themselves forward data to the standalone Collector sink, which is configured to send metrics to a \textit{Prometheus}
+                    server and distributed tracing data to the LightStep API.}
+                    \label{fig:otexporter}
+                \end{figure}
+                
 
     \chapter{Design \& Implementation}
         \small{In this section, we will cover the different technical aspects, design decisions and components that played a role throughout the projects lifecycle.
         This will include third party services and the roles they played.}
 
         \section{Architecture Design}
-            \section{Distributed Tracing API}
+            \subsection{Distributed Tracing API}
             The OpenTracing API interface was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
             source tooling built around the OpenTracing API. It is also widely supported by many third party vendors, including LightStep, DataDog and Honeycomb amongst 
-            numerous others. 
+            numerous others.
 
             OpenTelemetry was initially considered as an alternative choice instead of OpenTracing, but was ultimately decided against due to it still being a very new
-            standard, with OpenTracing having much more comprehensive support from both application libraries and distributed tracing tools.
+            standard, with OpenTracing having much more comprehensive support and documentation resources from both application libraries and distributed tracing tools.
+            This lowered the productivity barrier, as the OpenTelemetry backing components, including the collector, introduce more complexity than what exists in a simple
+            development-oriented OpenTracing setup.
 
-            \subsection{Backing Services}
+            \subsection{Supporting Services}
             As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
             Firstly, we will need a way of collecting trace data from applications. We will be using 
             
@@ -274,9 +358,11 @@
 
     \chapter{Evaluation}
     
-    \chapter{Conclusion}
-    
-    \chapter{Future Work}
+    \chapter{Conclusion \& Future}
+        \section{Conclusion}
+
+        \section{Future Work}
+            \subsection{OpenTelemetry}
 
     \begin{thebibliography}{69}
         \addcontentsline{toc}{chapter}{Bibliography}    

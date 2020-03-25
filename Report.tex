@@ -186,9 +186,9 @@
 
         \section{Project Summary}
             This project builds upon the concepts of distributed tracing, exploring ways to provide novel and high-value derivable ways of visualizing and presenting distributed tracing
-            data to developers. We will utilize modern standards, tools and integrations to test the viability of less common and unexplored visualizations of distributed tracing data.
+            data to developers. Modern standards, tools and integrations will be utilized to test the viability of less common and unexplored visualizations of distributed tracing data.
 
-            In Chapter 2, we will introduce the history of distributed tracing, while also covering some common vocabulary relevant to the topic and where they originated. It will also
+            In Chapter 2, the history of distributed tracing will be introduced, while also covering some common vocabulary relevant to the topic and where they originated. It will also
             cover some of the standards that this project builds around. In Chapter 3, the project architecture design choices will be discussed and how they impacted the project, ranging
             from the frontend frameworks chosen to the backend API and supporting services that power the various implementations. Finally, the different visualizations will be evaluated
             on the value the provide as well as the feasibility of utilizing them in real-world scenarios. Chapters 5 and 6 will draw the writeup to a conclusion, detailing the closing
@@ -329,32 +329,52 @@ opentracing.SetGlobalTracer(t)
                 
 
     \chapter{Design \& Implementation}
-        \small{In this section, we will cover the different technical aspects, design decisions and components that played a role throughout the projects lifecycle.
+        \small{In this section, the different technical aspects will be covered, design decisions and components that played a role throughout the projects lifecycle.
         This will include third party services and the roles they played.}
 
         \section{Architecture Design}
             \subsection{Distributed Tracing API}
-            The OpenTracing API interface was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
-            source tooling built around the OpenTracing API. It is also widely supported by many third party vendors, including LightStep, DataDog and Honeycomb amongst 
-            numerous others.
+                The OpenTracing API interface was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
+                source tooling built around the OpenTracing API. It is also widely supported by many third party vendors, including LightStep, DataDog and Honeycomb amongst 
+                numerous others.
 
-            OpenTelemetry was initially considered as an alternative choice instead of OpenTracing, but was ultimately decided against due to it still being a very new
-            standard, with OpenTracing having much more comprehensive support and documentation resources from both application libraries and distributed tracing tools.
-            This lowered the productivity barrier, as the OpenTelemetry backing components, including the collector, introduce more complexity than what exists in a simple
-            development-oriented OpenTracing setup.
+                OpenTelemetry was initially considered as an alternative choice instead of OpenTracing, but was ultimately decided against due to it still being a very new
+                standard, with OpenTracing having much more comprehensive support and documentation resources from both application libraries and distributed tracing tools.
+                This lowered the productivity barrier, as the OpenTelemetry backing components, including the collector, introduce more complexity than what exists in a simple
+                development-oriented OpenTracing setup.
+
+                Potential explorations around the OpenTelemetry API are discussed in the \textit{Future Work} section.
 
             \subsection{Supporting Services}
-            As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
-            Firstly, we will need a way of collecting trace data from applications. We will be using 
-            
-            we have a primary database in which these traces will be persisted. 
+                As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
+                Firstly, a way of collecting trace data from applications is needed, and secondly, the database into which the data is persisted.
+                
+                The OpenTracing platform, Jaeger, was chosen for this project. Jaeger is wholly self-hostable, providing a convenient setup for single-machine development purposes with
+                a single, all-inclusive binary available from the distribution archives, as well as a pre-built \textit{Docker} image published to DockerHub. The full Jaeger package,
+                available in whole in the aforementioned all-inclusive formats, includes the trace collector, trace search and visualization user interface and agent.
+
+                By default, the all-in-one Jaeger distribution stores all trace data in-memory. For convenience to persist data in between machine reboots, the JSON document search engine
+                database, \textit{Elasticsearch}, was chosen as the storage backend for Jaeger, as one of two possible choices alongside \textit{Apache Cassandra}, a column store document
+                database. The Backend API, discussed later in this chapter, interfaces with the Elasticsearch database as the source of truth for the trace data. A complementary user interface
+                for Elasticsearch, maintained by the developers of Elasticsearch, \textit{Kibana}, was used throughout the development of the project to view the raw trace data as it is 
+                represented in the database.
+
+                In line with how the OpenTracing API works, the Jaeger language-specific instrumenting libraries must be used to inject the Jaeger tracer implementation into the 
+                applications.
 
 
-        \section{Backend API}
+            \subsection{Backend API}
+                GraphQL vs Rest
+                ES lib
+                Kotlin
+                
+        \section{Implementations}
+                
+            \subsection{Backend API}
 
-        \section{Service Topology Frontend}
+            \subsection{Service Topology Frontend}
 
-        \section{Debug Adapter}
+            \subsection{Debug Adapter}
 
     \chapter{Evaluation}
     

@@ -10,7 +10,7 @@ a.out
 node_modules
 vsc-extension-quickstart.md
 data/nodes
-*.js
+trace_step/**/*.js
 *.map
 sample.json
 *.log

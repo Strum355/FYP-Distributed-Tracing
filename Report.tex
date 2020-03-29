@@ -17,9 +17,9 @@
 \graphicspath{{./assets/}}
 
 \PassOptionsToPackage{hyphens}{url}\usepackage{url}
-\usepackage{microtype, caption, copyrightbox, textcomp, hyperref, listings, assets/listings-golang}
-\captionsetup[lstlisting]{font={footnotesize},width=0.8\linewidth}
-\captionsetup[figure]{font={footnotesize},width=0.8\linewidth}
+\usepackage{microtype, caption, copyrightbox, textcomp, hyperref, listings, assets/listings-kotlin, assets/listings-graphql}
+\captionsetup[lstlisting]{font={scriptsize},width=0.8\linewidth}
+\captionsetup[figure]{font={scriptsize},width=0.8\linewidth}
 
 \hypersetup{
     colorlinks,
@@ -32,13 +32,13 @@
     frame=leftline,
     basicstyle=\scriptsize\ttfamily,
     keywordstyle=\color{Blue},
+    emphstyle=\bfseries,
     numbers=left,
     numbersep=5pt,
     showstringspaces=false, 
     stringstyle=\color{ForestGreen},
     commentstyle=\color{gray},
-    tabsize=4,
-    language=Go
+    tabsize=4
 }
 
 \makeatletter
@@ -259,45 +259,45 @@
                 and attributes for creating instances of OpenTracing API \textit{tracers} implementations.
 
 % Latex expects everything on one indentation level? very sad
-                \begin{lstlisting}[caption={Example Golang snippet of instatiating a Datadog OpenTracing compatible tracer.}]
-package main
+                \begin{lstlisting}[caption=Example Golang snippet of instatiating a Datadog OpenTracing compatible tracer., language=Go, gobble=20]
+                    package main
 
-import (
-    "gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
-    "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
-    "github.com/opentracing/opentracing-go"
-)
+                    import (
+                        "gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
+                        "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
+                        "github.com/opentracing/opentracing-go"
+                    )
 
-// Start a Datadog tracer, optionally providing a set of options,
-// returning an opentracing.Tracer which wraps it.
-t := opentracer.New(
-    tracer.WithAgentAddr("host:port"),
-    tracer.WithServiceName("sample-text"))
+                    // Start a Datadog tracer, optionally providing a set of options,
+                    // returning an opentracing.Tracer which wraps it.
+                    t := opentracer.New(
+                        tracer.WithAgentAddr("host:port"),
+                        tracer.WithServiceName("sample-text"))
 
-    // Use it with the OpenTracing API, setting it as global.
-opentracing.SetGlobalTracer(t)
+                        // Use it with the OpenTracing API, setting it as global.
+                    opentracing.SetGlobalTracer(t)
                 \end{lstlisting}
 
                 \newpage
-                \begin{lstlisting}[caption={Example Golang snippet of instatiating a Jaeger OpenTracing compatible tracer.}]
-package main
+                \begin{lstlisting}[caption=Example Golang snippet of instatiating a Jaeger OpenTracing compatible tracer., language=Go, gobble=20]
+                    package main
 
-import (
-    "github.com/uber/jaeger-client-go"
-    "github.com/uber/jaeger-client-go/transport"
-    "github.com/opentracing/opentracing-go"
-)
+                    import (
+                        "github.com/uber/jaeger-client-go"
+                        "github.com/uber/jaeger-client-go/transport"
+                        "github.com/opentracing/opentracing-go"
+                    )
 
-// Start a Jaeger tracer, supplying the sampling strategy and the
-// reporter configuration.
-t, closer := jaeger.NewTracer(
-    "sample-text",
-    jaeger.NewConstSampler(true),
-    jaeger.NewRemoteReporter(transport.NewHTTPTransport("host:port")))
-defer closer.Close()
+                    // Start a Jaeger tracer, supplying the sampling strategy and the
+                    // reporter configuration.
+                    t, closer := jaeger.NewTracer(
+                        "sample-text",
+                        jaeger.NewConstSampler(true),
+                        jaeger.NewRemoteReporter(transport.NewHTTPTransport("host:port")))
+                    defer closer.Close()
 
-// Use it with the OpenTracing API, setting it as global.
-opentracing.SetGlobalTracer(t)                    
+                    // Use it with the OpenTracing API, setting it as global.
+                    opentracing.SetGlobalTracer(t)                    
                 \end{lstlisting}
 
             \subsection{OpenTelemetry}
@@ -359,22 +359,126 @@ opentracing.SetGlobalTracer(t)
                 for Elasticsearch, maintained by the developers of Elasticsearch, \textit{Kibana}, was used throughout the development of the project to view the raw trace data as it is 
                 represented in the database.
 
-                In line with how the OpenTracing API works, the Jaeger language-specific instrumenting libraries must be used to inject the Jaeger tracer implementation into the 
-                applications.
+                %In line with how the OpenTracing API works with regards to tracer implementations, the Jaeger language-specific instrumenting libraries must be used to inject the Jaeger 
+                %tracer implementation into the applications. A small number of 
 
 
             \subsection{Backend API}
-                GraphQL vs Rest
-                ES lib
-                Kotlin
+                To query for and transform the distributed tracing data stored in Elasticsearch, an HTTP API was developed for the two codebases of the ideas explored to interface with.
+                Written in Kotlin, a programming language that runs on the Java Virtual Machine, it provides a GraphQL interface to fetch the trace data from Elasticsearch. It was 
+                decided that Kotlin would be the language used for the backend after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
+                that utilized the Kotlin \textit{Domain Specific Language} (DSL) to define the queries and schemas respectively.
                 
-        \section{Implementations}
-                
-            \subsection{Backend API}
+                \subsubsection{GraphQL}
+                    As an alternative to traditional RESTful HTTP services, GraphQL is both a query language and a server-side runtime for executing queries against a defined data schema
+                    laid out by the type system. The type system can be shared between both servers and clients alike, allowing for a common, known data schema. The data schema consists of 
+                    user defined object types representing the data, as well as two special types: the \textit{Query} type and the \textit{Mutation} type. These define the entrypoints into
+                    the GraphQL server, allowing for the fetching and modification of data, and can take a defined set of arguments as defined in the schema, which may be defined as being
+                    optional.\newpage
+
+                    \begin{lstlisting}[caption={A basic GraphQL schema, defining a query and data types.}, language=GraphQL, gobble=24]
+                        type Query {
+                            allPersons(last: Int): [Person!]!
+                        }
+
+                        type Person {
+                            name: String!
+                            age: Int!
+                            posts: [Post!]!
+                        }
+
+                        type Post {
+                            title: String!
+                            author: Person!
+                        }
+                    \end{lstlisting}
+                    
+                    One of GraphQLs improvements over traditional REST is the ability to specify fields to \textit{resolve} in the server-side runtime engine. Besides preventing
+                    under- and over-fetching, this also allows for the ability to selectively augment the returned data, adding extra fields or even changing existing ones on-demand,
+                    all within the same query while not incurring the costs for clients that do not request them. Listing~\ref{lst:graphPerson} shows an example of selective field
+                    resolving. The second query also requests the \texttt{posts} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
+                    statement, while also resulting in potentially more data being sent down the wire.
+
+                    \begin{lstlisting}[caption={A GraphQL query to fetch only the names of 5 people in a dataset compared to a query to fetch the names and post
+                        titles associated with 10 people in the dataset.}, label={lst:graphPerson}, language=GraphQL, gobble=24]
+                        {
+                            query allPersons(limit: 5) {
+                                name
+                            }
+                        }
+
+                        {
+                            query allPersons(limit: 10) {
+                                name
+                                posts {
+                                    title
+                                }
+                            }
+                        }
+                    \end{lstlisting}
+
+                \subsubsection{Interfacing with the Database}
+                    As the decision was made to use the Jaeger tracing platform backed by Elasticsearch for this project, the backend server must interface with Elasticsearch
+                    to be able to serve the data to the API clients that make up this project. Under these circumstances, this project could be potentially used in production
+                    by teams that host a Jaeger tracing platform on their infrastructure with Elasticsearch. The backend must simply support connecting to the database, building 
+                    JSON queries at either an abstracted or low level and finally being able to execute those queries against the database. Elasticsearch has first-party libraries
+                    for a  large number of languages, and given Kotlin's interoperability with Java, the backend makes use of the Java Elasticsearch client library. Adding support 
+                    for Apache Cassandra database would be trivial, however outside of the scope of this project.
+
+                    While the Jaeger tracing platform is commonly employed by development teams, vendor hosted distributed tracing systems also have seen large adoption due to the 
+                    fact that it allows teams to not worry about maintaining an instance of Jaeger in their infrastructure, either due to convenience, monetary costs needed to host
+                    the Jaeger platform or having to maintain extra services. These vendors often don't provide a public API for querying and fetching trace data. Discussion around
+                    possible solutions for these scenarios can be found in the future works section.
+
+            \subsection{Debug Adapter}
 
             \subsection{Service Topology Frontend}
 
+        \newpage          
+        \section{Implementations}    
+            \subsection{Backend API}
+                \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=20]
+                    val schema = KGraphQL.schema { 
+                        query("findTrace") { 
+                            resolver { traceID: String ->
+                                esRepo.getTraceByID(traceID)
+                            }.withArgs { 
+                                arg<String> { name = "traceID"}
+                            }
+                        }
+
+                        type<Span> {
+                            property<StackTrace>("stacktrace") { 
+                                resolver { span ->
+                                    StackTrace.fromSpan(span)
+                                }
+                            }
+                        }
+                    }                
+                \end{lstlisting}
+
+                \begin{lstlisting}[caption={Comparison between Elasticsearch query using Kotlin DSL and the query in its JSON representation, where $\langle$traceID$\rangle$ refers
+                    to a variable storing the trace identifier.}, language=Kotlin, gobble=20]
+                    // Kotlin DSL
+                    val query = bool {
+                        must {
+                            term { "traceID" to <traceID> }
+                        }
+                    }
+
+                    // JSON Representation
+                    {
+                        "bool": {
+                            "must": {
+                                "term": { "traceID": "<traceID>" }
+                            }
+                        }
+                    }
+                \end{lstlisting}
             \subsection{Debug Adapter}
+            
+            \subsection{Service Topology Frontend}
+            
 
     \chapter{Evaluation}
     

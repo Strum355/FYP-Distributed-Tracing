@@ -1,0 +1,10 @@
+\ProvidesFile{lstlang0.sty}[1.2 listings language file for GraphQL]
+\lstdefinelanguage{GraphQL}{
+    comment=[l]{//},
+    emph={!,\$*},
+    keywords={type,query,mutation,schema,enum,scalar},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    sensitive=true
+}
+\endinput

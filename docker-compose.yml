@@ -71,7 +71,7 @@ services:
   backend:
     build:
       target: dev
-      context: ./service_topology/backend
+      context: ./backend
     container_name: fyp-topology
     volumes: 
       - ./service_topology/backend/src:/topology/src
@@ -85,7 +85,7 @@ services:
   
   frontend:
     build: 
-      context: ./service_topology/frontend
+      context: ./service_topology
     container_name: fyp-frontend
     volumes: 
       - ./service_topology/frontend:/app

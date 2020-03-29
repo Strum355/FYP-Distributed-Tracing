@@ -1,0 +1,12 @@
+\ProvidesFile{lstlang0.sty}[1.2 listings language file for Kotlin]
+\lstdefinelanguage{Kotlin}{
+    comment=[l]{//},
+    emph={delegate, filter, first, firstOrNull, forEach, lazy, map, mapNotNull, println, return@},
+    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, null, object, override, package, private, public, return, set, super, suspend, this, throw, true, try, typealias, val, var, vararg, when, where, while},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    morestring=[s]{"""*}{*"""},
+    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String, StackTrace, Span},
+    sensitive=true
+}
+\endinput

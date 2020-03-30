@@ -242,8 +242,9 @@
                 tags and logs are attached to a span.
 
                 Figure~\ref{fig:opentracing} shows a timeline based visualization of where the different components of the OpenTracing API interface are utilized in
-                the larger picture of creating a span through use of distributed context propagation in the span context
-
+                the larger picture of creating a span through use of distributed context propagation in the span context construct to build the span tree across
+                process and network boundaries.
+                
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
@@ -431,6 +432,37 @@
                     possible solutions for these scenarios can be found in the future works section.
 
             \subsection{Debug Adapter}
+                For this part of the project, it was decided to develop the idea of integrating the telemetry from instrumented applications into the debugger API of Visual Studio Code.
+                Visual Studio Code was chosen as the editor for which the integration would be built due to its extensive extensibility and first class Debug Adapter Protocol support. 
+                Built in Typescript, a Javascript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
+                and the editor to provide many of the same features one would expect from traditional debugger tools such as the GNU Project Debugger (GDB).
+
+                Figure~\ref{fig:debug-arch} displays the general architecture of how editors and tools utilize the programs that implement the Debug Adapter Protocol to interact with
+                lower level debug runtimes, such as GDB etc. Each editor or tool would contain a small, lightweight shim, one per debug adapter, that launches the debug adapter with the
+                appropriate configuration, potentially with user supplied configuration data, before handing off to the in-editor/tool generic debugger that interacts with the now running
+                debug adapter through the Debug Adapter Protocol.
+
+                The Debug Adapter for this part of the project combines combines the three necessary parts in the one codebase, the shim, debug adapter and debugger runtime, for convenience
+                in developing the proof of concept. It builds off the Visual Studio Code mock debug adapter, a sample codebase implementing the shim, debug adapter and a dummy debugger
+                runtime in one. Heavily inspired by asynchronous event-based programming as is commonplace in the NodeJS ecosystem, the debug adapter invokes asynchronous methods on the 
+                debugger runtime when it receives requests from the editor or tool in the Debug Adapter Protocol format, upon which the debugger runtime may emit events that the debug adapter
+                translates into Debug Adapter Protocol events for the editor or tool to consume.
+
+                \begin{figure}[hbt!]
+                    \centering
+                    \copyrightbox[r]{
+                        \includegraphics[scale=0.4]{debug-arch}
+                    }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
+                    \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
+                        editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
+                        Adapters.}
+                    \label{fig:debug-arch}
+                \end{figure}
+
+                Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it can fetch the spans and their metadata for the trace ID, load the 
+                source code files for each span and allow the user to step through the code on a span-by-span basis (or more granular). If successful, the user would be able to see the
+                source code file and line in which the current span was started and step back and forth between spans and their respective source code files and lines. Given the focus
+                around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase.
 
             \subsection{Service Topology Frontend}
 

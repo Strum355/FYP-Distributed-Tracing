@@ -192,7 +192,7 @@ export class DebugSession extends LoggingDebugSession {
     this.sendResponse(response)
   }
 
-  protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.Request): void {
+  protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.PauseRequest): void {
     this.sendResponse(response)
   }
 

@@ -259,7 +259,6 @@
                 different platforms may have different, vendor-specific options for operations such as access control, authorization etc, vendors provide different mechanisms
                 and attributes for creating instances of OpenTracing API \textit{tracers} implementations.
 
-% Latex expects everything on one indentation level? very sad
                 \begin{lstlisting}[caption=Example Golang snippet of instatiating a Datadog OpenTracing compatible tracer., language=Go, gobble=20]
                     package main
 
@@ -459,10 +458,29 @@
                     \label{fig:debug-arch}
                 \end{figure}
 
-                Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it can fetch the spans and their metadata for the trace ID, load the 
+                Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it should fetch the spans and their metadata for the trace ID, load the 
                 source code files for each span and allow the user to step through the code on a span-by-span basis (or more granular). If successful, the user would be able to see the
                 source code file and line in which the current span was started and step back and forth between spans and their respective source code files and lines. Given the focus
-                around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase.
+                around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase, assuming that the codebases for the other 
+                services also reside on the user's machine.
+                
+                The main approach to making this set of requirements possible is by utilizing the tag constructs defined in the OpenTracing specification to carry additional runtime or
+                compile time information that provides enough information to the debugger runtime. This can be done by implementing shims that wrap OpenTracing trace implementations with
+                methods that add the required information as tags to newly created span instances. When the debugger runtime queries the backend API, it can request an additional field on
+                the span types that the backend GraphQL resolver resolves by transforming the information gathered by the shims into a format more useful to the debugger runtime than the
+                raw collected information. This results in being able to interface with the same GraphQL query as the project idea that follows this part, while not incurring the 
+                transformation costs in the following idea.
+                % TODO: word this better
+
+                In practice, there are a number of challenges that arise in various parts of this concept; gathering the information required to pinpoint the source file and line varies 
+                in format across different programming languages, amount of stack trace information that is to be or that can be gathered and its formats across different programming 
+                languages, mapping different services to the location in the filesystem of their codebase as well as handling spans emitted from services not appropriately instrumented 
+                for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
+
+                When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
+                The first approach is to simply query the runtime, if applicable, for the file path and line number associated with the function that invoked the span creation. This is often
+                a relatively cheap operation, with a small footprint in the amount of data that a span is tagged with. The main downside of this approach is that while it results in a small 
+                amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime.   
 
             \subsection{Service Topology Frontend}
 
@@ -513,6 +531,7 @@
             
 
     \chapter{Evaluation}
+        %  Not all languages have runtime info for source file and line num eg C, C++
     
     \chapter{Conclusion \& Future}
         \section{Conclusion}

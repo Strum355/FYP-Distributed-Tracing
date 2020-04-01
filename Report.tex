@@ -142,7 +142,7 @@
                 \label{fig:debugger}
             \end{figure}
             
-            However, it's often infeasible to use them in production scenarios due to their nature of halting complete execution of the process.
+            However, it is often infeasible to use them in production scenarios due to their nature of halting complete execution of the process.
             This makes it unsuitable for debugging issues that manifest in production that developers are finding it difficult to reproduce in development scenarios, as is often
             a common scenario due to subtle parity differences between development and production systems.
 
@@ -427,8 +427,9 @@
 
                     While the Jaeger tracing platform is commonly employed by development teams, vendor hosted distributed tracing systems also have seen large adoption due to the 
                     fact that it allows teams to not worry about maintaining an instance of Jaeger in their infrastructure, either due to convenience, monetary costs needed to host
-                    the Jaeger platform or having to maintain extra services. These vendors often don't provide a public API for querying and fetching trace data. Discussion around
-                    possible solutions for these scenarios can be found in the future works section.
+                    the Jaeger platform or having to maintain extra services. These vendors often do not provide a public API for querying and fetching trace data. Discussion around
+                    possible solutions for these scenarios can be found in the future works section. The rest of this report works under the assumption of the Jaeger tracing platform
+                    being employed, either as the sole distributed tracing system or complementary to a vendor hosted solution. 
 
             \subsection{Debug Adapter}
                 For this part of the project, it was decided to develop the idea of integrating the telemetry from instrumented applications into the debugger API of Visual Studio Code.
@@ -478,9 +479,27 @@
                 for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
 
                 When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
-                The first approach is to simply query the runtime, if applicable, for the file path and line number associated with the function that invoked the span creation. This is often
+                The first approach is to simply query the runtime, where applicable, for the file path and line number associated with the function that invoked the span creation. This is often
                 a relatively cheap operation, with a small footprint in the amount of data that a span is tagged with. The main downside of this approach is that while it results in a small 
-                amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime.   
+                amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime. With this information, the debugger runtime is
+                limited to jumping between those single, individual points in the code at which the spans are created (this could be expanded to also wrap the log-point calls to do the same).
+                
+                The second approach involves querying the runtime for an entire stacktrace leading up to this point. With this approach, there is considerably more data, with all the function
+                calls of the stack frame tree branch leading up to the span creation being gathered, allowing for the possibility to step back and forth at the function level rather than simply
+                at the span level. In both these instances, the data is attached to spans as tags. There are a few downsides to this approach and possible workarounds that will be discussed.
+                
+                In many language implementations of the Jaeger tracer, tag values are limited in length to either 256 or 1024 characters. When dealing with stacktraces, this limit is too 
+                restrictive for storing entire stacktraces. This is due to an outstanding issue in Jaeger client implementations when using UDP as the transport protocol, as span sizes
+                would exceed the maximum UDP packet size of 65535 bytes\cite{udptagsize}. This makes using HTTP as the span transport method a hard requirement to avoid UDP packets being
+                dropped, causing entire spans to be lost. The client implementations also provide an interface for changing the max tag value length, which must be utilised to prevent the truncating
+                of the stacktraces. Another downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often be considerably more expensive than 
+                adding simple tags to a span. Unfortunately, sampling rules, the processes by which it is decided whether or not spans are exported, in the Jaeger client implementations are only 
+                applied to log points and the final reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if the span will never be reported.
+                Despite implementing head-based sampling, where it is know when the root span is created whether or not the trace will be reported, the API does not expose an interface for querying this
+                fact. For this reason, it was important to make the operation as cheap as possible, leaving as much stacktrace transformations as possible to query time, when the debugger runtime requests
+                a trace from the backend.
+
+
 
             \subsection{Service Topology Frontend}
 
@@ -562,5 +581,10 @@
         OpenTelemetry Authors, \textit{The OpenTelemetry Project.} 
         19th April 2019 \\
         \url{https://opentelemetry.io/}
+
+        \bibitem{udptagsize}
+        Yuri Shkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
+        31st May, 2018 \\
+        \url{https://github.com/jaegertracing/jaeger-client-go/pull/316#issuecomment-393386461}
     \end{thebibliography}
 \end{document}

@@ -236,7 +236,7 @@
                 are named \textit{tags}. 
 
                 The OpenTracing API also specifies how a trace cross process boundaries, so that spans created in different processes can be
-                associated with a common trace tree. This was named the \textit{span context} and at it's most basic level contains the 
+                associated with a common trace tree. This was named the \textit{span context} and at its most basic level contains the 
                 overlying trace ID as well as the current span ID. With this, new spans generated across process boundaries have the ability to
                 to specify their parent span as well as their common trace, without propagating an entire span, which may prove costly as more
                 tags and logs are attached to a span.
@@ -417,6 +417,48 @@
                         }
                     \end{lstlisting}
 
+                    \begin{lstlisting}[caption=Base GraphQL schema for the trace service API backend., language=GraphQL, gobble=24]
+                        type Query{
+                            findTrace(traceID: String): Trace
+                        }
+
+                        type Trace{
+                            traceID: String!
+                            spans: [Span!]!
+                        }
+
+                        type Span{
+                            traceID: String!
+                            spanID: String!
+                            parentSpanID: String
+                            duration: Int!
+                            startTime: Int!
+                            operationName: String!
+                            serviceName: String!
+                            logs: [LogPoint!]
+                            tags: [Tag!]
+                        }
+
+                        type LogPoint{
+                            timestamp: Int!
+                            fields: [LogPointField!]!
+                        }
+
+                        type LogPointField{
+                            key: String!
+                            type: String!
+                            value: String!
+                        }
+
+                        type Tag{
+                            key: String!
+                            type: String!
+                            value: String!
+                        }
+                    \end{lstlisting}
+
+                    % TODO: base spans, tags, traces, logs graphql schema
+
                 \subsubsection{Interfacing with the Database}
                     As the decision was made to use the Jaeger tracing platform backed by Elasticsearch for this project, the backend server must interface with Elasticsearch
                     to be able to serve the data to the API clients that make up this project. Under these circumstances, this project could be potentially used in production
@@ -486,20 +528,28 @@
                 
                 The second approach involves querying the runtime for an entire stacktrace leading up to this point. With this approach, there is considerably more data, with all the function
                 calls of the stack frame tree branch leading up to the span creation being gathered, allowing for the possibility to step back and forth at the function level rather than simply
-                at the span level. In both these instances, the data is attached to spans as tags. There are a few downsides to this approach and possible workarounds that will be discussed.
+                at the span level. In both these instances, the data is attached to spans as tags. This approach was chosen to be explored for the project due to the larger potential that accompanies
+                the greater amount of data. For further processing outlined in the following paragraph, the programming language from which the span originates is added as a tag to the span.
+                There are a few downsides to this approach and possible workarounds that will also be discussed.
                 
                 In many language implementations of the Jaeger tracer, tag values are limited in length to either 256 or 1024 characters. When dealing with stacktraces, this limit is too 
                 restrictive for storing entire stacktraces. This is due to an outstanding issue in Jaeger client implementations when using UDP as the transport protocol, as span sizes
                 would exceed the maximum UDP packet size of 65535 bytes\cite{udptagsize}. This makes using HTTP as the span transport method a hard requirement to avoid UDP packets being
                 dropped, causing entire spans to be lost. The client implementations also provide an interface for changing the max tag value length, which must be utilised to prevent the truncating
-                of the stacktraces. Another downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often be considerably more expensive than 
-                adding simple tags to a span. Unfortunately, sampling rules, the processes by which it is decided whether or not spans are exported, in the Jaeger client implementations are only 
-                applied to log points and the final reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if the span will never be reported.
-                Despite implementing head-based sampling, where it is know when the root span is created whether or not the trace will be reported, the API does not expose an interface for querying this
-                fact. For this reason, it was important to make the operation as cheap as possible, leaving as much stacktrace transformations as possible to query time, when the debugger runtime requests
-                a trace from the backend.
+                of the stacktraces. As this number cannot be set on a per-span basis, it must be set at a reasonably large number ahead of time based on previous examples of possible stacktrace sizes
+                or the maximum value of an integer for the given platform. Another downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often 
+                be considerably more expensive than adding simple tags to a span. Unfortunately, sampling rules in the Jaeger client implementations, the processes by which it is decided whether or 
+                not spans are exported, are only applied to log points and the final reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if 
+                the span will never be reported. Despite implementing head-based sampling, where it is know when the root span is created whether or not the trace will be reported, the API does not 
+                expose an interface for querying this fact. For this reason, it was important to make the operation as cheap as possible, leaving as much stacktrace transformations as possible to 
+                query time, when the debugger runtime requests a trace from the backend.
 
+                With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is adjusted by adding a field to the span type with an associated resolver and 
+                types that define a stacktrace and its individual stack frames. This resolver reads the stored stacktrace and the programming language associated with the span to process it into a 
+                stacktrace object usable for the debugger runtime. As each language has a different format for its stacktraces, a stacktrace parser must be created for each language supported. These
+                will parse the raw stacktrace strings and returns them as a parsed and formatted stracktrace object to the GraphQL resolver.
 
+                % TODO: updated graphql schema with stacktrace as field with resolver
 
             \subsection{Service Topology Frontend}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"net/http"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	stackLength = 10000 * 10000 //completely arbitrary :)
+	stackLength = math.MaxInt64
 	serviceName = "example1"
 )
 

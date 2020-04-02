@@ -376,58 +376,17 @@
                     the GraphQL server, allowing for the fetching and modification of data, and can take a defined set of arguments as defined in the schema, which may be defined as being
                     optional.\newpage
 
-                    \begin{lstlisting}[caption={A basic GraphQL schema, defining a query and data types.}, language=GraphQL, gobble=24]
+                    \begin{lstlisting}[caption={The base GraphQL schema, defining a query and data types for the trace data.}, language=GraphQL, gobble=24]
                         type Query {
-                            allPersons(last: Int): [Person!]!
-                        }
-
-                        type Person {
-                            name: String!
-                            age: Int!
-                            posts: [Post!]!
-                        }
-
-                        type Post {
-                            title: String!
-                            author: Person!
-                        }
-                    \end{lstlisting}
-                    
-                    One of GraphQLs improvements over traditional REST is the ability to specify fields to \textit{resolve} in the server-side runtime engine. Besides preventing
-                    under- and over-fetching, this also allows for the ability to selectively augment the returned data, adding extra fields or even changing existing ones on-demand,
-                    all within the same query while not incurring the costs for clients that do not request them. Listing~\ref{lst:graphPerson} shows an example of selective field
-                    resolving. The second query also requests the \texttt{posts} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
-                    statement, while also resulting in potentially more data being sent down the wire.
-
-                    \begin{lstlisting}[caption={A GraphQL query to fetch only the names of 5 people in a dataset compared to a query to fetch the names and post
-                        titles associated with 10 people in the dataset.}, label={lst:graphPerson}, language=GraphQL, gobble=24]
-                        {
-                            query allPersons(limit: 5) {
-                                name
-                            }
-                        }
-
-                        {
-                            query allPersons(limit: 10) {
-                                name
-                                posts {
-                                    title
-                                }
-                            }
-                        }
-                    \end{lstlisting}
-
-                    \begin{lstlisting}[caption=Base GraphQL schema for the trace service API backend., language=GraphQL, gobble=24]
-                        type Query{
                             findTrace(traceID: String): Trace
                         }
 
-                        type Trace{
+                        type Trace {
                             traceID: String!
                             spans: [Span!]!
                         }
 
-                        type Span{
+                        type Span {
                             traceID: String!
                             spanID: String!
                             parentSpanID: String
@@ -439,25 +398,56 @@
                             tags: [Tag!]
                         }
 
-                        type LogPoint{
+                        type LogPoint {
                             timestamp: Int!
                             fields: [LogPointField!]!
                         }
 
-                        type LogPointField{
+                        type LogPointField {
                             key: String!
                             type: String!
                             value: String!
                         }
 
-                        type Tag{
+                        type Tag {
                             key: String!
                             type: String!
                             value: String!
                         }
                     \end{lstlisting}
+                    
+                    One of GraphQLs improvements over traditional REST is the ability to specify fields to \textit{resolve} in the server-side runtime engine. Besides preventing
+                    under- and over-fetching, this also allows for the ability to selectively augment the returned data, adding extra fields or even changing existing ones on-demand,
+                    all within the same query while not incurring the costs for clients that do not request them. Listing~\ref{lst:graphTrace} shows an example of selective field
+                    resolving. The second query also requests the \texttt{spans} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
+                    statement, while also resulting in potentially more data being sent down the wire.
 
-                    % TODO: base spans, tags, traces, logs graphql schema
+                    \newpage
+                    \begin{lstlisting}[caption={A GraphQL query to fetch a trace object and the span ID of each of its spans compared to a query to fetch the trace object, its spans and every
+                        tag of every span.}, label={lst:graphTrace}, language=GraphQL, gobble=24]
+                        {
+                            query findTrace(traceID: "asdf") {
+                                traceID
+                                spans {
+                                    spanID
+                                }
+                            }
+                        }
+
+                        {
+                            query findTrace(traceID: "asdf") {
+                                traceID
+                                spans {
+                                    spanID
+                                    tags {
+                                        key
+                                        type
+                                        value
+                                    }
+                                }
+                            }
+                        }
+                    \end{lstlisting}
 
                 \subsubsection{Interfacing with the Database}
                     As the decision was made to use the Jaeger tracing platform backed by Elasticsearch for this project, the backend server must interface with Elasticsearch
@@ -544,12 +534,30 @@
                 expose an interface for querying this fact. For this reason, it was important to make the operation as cheap as possible, leaving as much stacktrace transformations as possible to 
                 query time, when the debugger runtime requests a trace from the backend.
 
-                With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is adjusted by adding a field to the span type with an associated resolver and 
+                With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is amended by adding a field to the span type with an associated resolver and 
                 types that define a stacktrace and its individual stack frames. This resolver reads the stored stacktrace and the programming language associated with the span to process it into a 
                 stacktrace object usable for the debugger runtime. As each language has a different format for its stacktraces, a stacktrace parser must be created for each language supported. These
-                will parse the raw stacktrace strings and returns them as a parsed and formatted stracktrace object to the GraphQL resolver.
+                will parse the raw stacktrace strings and returns them as a parsed and formatted stacktrace object to the GraphQL resolver. Listing~\ref{lst:stack} shows the updated GraphQl schema
+                with the unchanged sections filtered out. 
 
-                % TODO: updated graphql schema with stacktrace as field with resolver
+                \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects, unchanged fields and objects filtered.}, language=GraphQL, gobble=20, label={lst:stack}]
+                    type Span {
+                        // ...
+                        stacktrace: StackTrace
+                    }
+
+                    // ...
+
+                    type StackTrace {
+                        stackFrames: [StackFrame!]!
+                    }
+
+                    type StackFrame {
+                        packageName: String!
+                        filename: String!
+                        line: Int!
+                    }
+                \end{lstlisting}
 
             \subsection{Service Topology Frontend}
 

@@ -559,6 +559,22 @@
                     }
                 \end{lstlisting}
 
+                \newpage
+                In this format, the debugger runtime has a more language agnostic representation of the stacktraces collected over the lifetime of a trace. There are still differences
+                in how absolute local paths are resolved from this information in order to load the correct file in the editor from the users local filesystem, from differences in how
+                codebases are structured into different packages for encapsulation and modularisation, as well as where dependencies are stored in the filesystem. For simplicity, 
+                resolving dependencies was not included in this project.
+
+                Alongside showing a stacktrace and the line in the file where the current span was created (or in the case of traditional debuggers, the line it has halted execution on),
+                editors often have a panel dedicated for displaying local and global variables for the current stackframe and execution context. Due to largely performance reasons, it is
+                not possible to attain this level of information on local and global variables when in the distributed tracing context unlike when using a halting debugger, assuming that 
+                \textit{DWARF} symbols (a name to complement \textit{Executable and Linkable Format (ELF)}, later assigned as an acronym for \textit{Debugging With Arbitrary Record Formats})
+                \cite{dwarf} are still baked into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. 
+                Instead of this, a spans tags can be displayed in said panel in place of variables. This works best when spans are heavily tagged with rich, high cardinality metadata which
+                gives greater insight into a service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to
+                those with a common set of tags that exhibit certain behaviour.
+                % TODO: is this the right place for that last line? why else would we want high cardinality 
+
             \subsection{Service Topology Frontend}
 
         \newpage          
@@ -611,6 +627,7 @@
         %  Not all languages have runtime info for source file and line num eg C, C++
     
     \chapter{Conclusion \& Future}
+    % showing multiple stacktraces from spans running at the same time
         \section{Conclusion}
 
         \section{Future Work}
@@ -644,5 +661,10 @@
         Yuri Shkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
         31st May, 2018 \\
         \url{https://github.com/jaegertracing/jaeger-client-go/pull/316#issuecomment-393386461}
+
+        \bibitem{dwarf}
+        Michael J.Eager, \textit{Introduction to the DWARF Debugging Format.}
+        Eager Consulting, April 2012 \\
+        \url{http://www.dwarfstd.org/doc/Debugging%20using%20DWARF-2012.pdf}
     \end{thebibliography}
 \end{document}

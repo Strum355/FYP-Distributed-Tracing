@@ -136,7 +136,7 @@
 
             \begin{figure}[hbt!]
                 \centering
-                \includegraphics[scale=0.335]{debugger}
+                \includegraphics[scale=0.335]{debugger.png}
                 \caption{Screenshot of the Visual Studio Code debugger in action. Clockwise, shown are an expandable list of local and global variables, the currently open file view
                 with the line currently halted on highlighted along with controls for stepping and finally the function call stack.}
                 \label{fig:debugger}
@@ -155,7 +155,7 @@
             \begin{figure}[hbt!]
                 \centering
                 \copyrightbox[r]{
-                    \includegraphics[scale=1.7]{distributed}
+                    \includegraphics[scale=1.7]{distributed.png}
                 }{
                     \tiny{\textcopyright Nic Munroe "Hit the Ground Running with Distributed Tracing Core Concepts" on Medium}
                 }
@@ -215,7 +215,7 @@
 
                 \begin{figure}[htb!]
                     \centering
-                    \includegraphics[scale=1]{dappertrace}
+                    \includegraphics[scale=1]{dappertrace.png}
                     \caption{The relationships between traces in a trace tree.}
                     \label{fig:dappertrace}
                 \end{figure}
@@ -248,7 +248,7 @@
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
-                        \includegraphics[scale=0.5]{opentracing}
+                        \includegraphics[scale=0.5]{opentracing.png}
                     }{\tiny{\textcopyright OpenTracing "OpenTracing Overview"}}
                     \caption{Infographic visualizing the different components that make up the OpenTracing API interface and how they relate to different services
                     and the network}
@@ -319,7 +319,7 @@
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
-                        \includegraphics[scale=0.5]{opentelemetry-exporter}
+                        \includegraphics[scale=0.5]{opentelemetry-exporter.png}
                     }{\tiny{\textcopyright{LightStep "OpenTelemetry 101: What is an Exporter?"}}}
                     \caption{A high level overview of a typical OpenTelemetry setup, with services hooking into the OpenTelemetry SDK to output telemetry to
                     OpenTelemetry Collectors, which themselves forward data to the standalone Collector sink, which is configured to send metrics to a \textit{Prometheus}
@@ -483,7 +483,7 @@
                     \begin{figure}[hbt!]
                         \centering
                         \copyrightbox[r]{
-                            \includegraphics[scale=0.4]{debug-arch}
+                            \includegraphics[scale=0.4]{debug-arch.png}
                         }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
                         \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
                             editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
@@ -566,32 +566,62 @@
                 In this format, the debugger runtime has a more language agnostic representation of the stacktraces collected over the lifetime of a trace. There are still differences
                 in how absolute local paths are resolved from this information in order to load the correct file in the editor from the users local filesystem, from differences in how
                 codebases are structured into different packages for encapsulation and modularisation, as well as where dependencies are stored in the filesystem. For simplicity, 
-                resolving dependencies was not included in this project.
+                resolving dependencies was not included in this project outside of the standard library for languages where implementation was trivial.
 
                 Alongside showing a stacktrace and the line in the file where the current span was created (or in the case of traditional debuggers, the line it has halted execution on),
                 editors often have a panel dedicated for displaying local and global variables for the current stack frame and execution context. Largely due to performance reasons, it is
                 not possible to attain this level of information on local and global variables when in the distributed tracing context unlike when using a halting debugger, assuming that 
                 \textit{DWARF} symbols (\textit{Debugging With Arbitrary Record Formats}, a standardized debugging data format embedded in executable binaries)\cite{dwarf} are still baked 
-                into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. Instead of this, a spans tags can 
-                be displayed in said panel in place of variables. This works best when spans are heavily tagged with rich, high cardinality metadata which gives greater insight into a 
-                service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to those with a common set of tags
-                that exhibit certain behaviour.
+                into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. Instead of this, the different types off
+                tags and other key-value pairs can be displayed in said panel in place of variables. This works best when traces are heavily tagged with rich, high cardinality metadata which gives 
+                greater insight into a service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to those with 
+                a common set of tags that exhibit certain behaviour.
                 % TODO: is this the right place for that last line? why else would we want high cardinality 
 
             \newpage
             \subsection{Service Topology Frontend}
                 In the service topology part of the project, the aim is to explore how to increase the value derivable from graph representations of the topology of a service architecture, at 
                 both an individual trace level and in aggregate. A common visualisation in many vendors in basic formats, they are commonly based on a type of directed graph called a 
-                \textit{force-directed graph} due to its aesthetically pleasing properties.
+                \textit{force-directed graph} due to its aesthetically pleasing properties. In the following section, the two main classes of service topology visualisations will be introduced,
+                monitoring oriented and metrics based visualisation as well as observability oriented and event based visualisations, with the differences between the two being highlighted with an 
+                emphasis on the need for the latter type.
         
-                A basic service topology graph can give a quick overview of the dependencies between different services in a distributed system. However, it has little use outside of making ones
-                boss happy. For developers and administrators to derive tangible value from such a visualization, there is a need for a more dynamic system. The ability to generate views based 
-                on arbitrary attributes would allow for users of the system to create more personalized and focused graphs based on their needs, such as grouping by high cardinality fields like 
-                end-user IP address, error rates, response times etc\cite{doingitwrongtopo}.
-        
-                The aim of this section of the project was to explore the viability and value of creating such a system, with the addition of being able to replay individual traces instead of
-                being presented an aggregated view. This took inspiration from the Massachusetts Bay Transit Authority (MBTA) data visualization project\cite{mbta}.
+                A basic service topology graph can give a quick overview of the dependencies between different services in a distributed system. However, it provides little value as an observability tool
+                for debugging production issues or finding internal services that are returning errors for certain customers. For developers and administrators to derive tangible value from such a 
+                visualization, there is a need for a more dynamic system. The ability to generate views based on arbitrary attributes would allow for users of the system to create more personalized and 
+                focused graphs based on their needs, such as grouping by high cardinality fields like end-user IP address, user identifiers as well as metrics such as error rates, response times 
+                etc\cite{doingitwrongtopo}.
 
+                While they are commonly found in distributed tracing vendor services, the implementations are often very simplistic. A common example of such an implementation begins with a basic, often directed
+                graph of each service as defined by the service name metadata passed into a tracer implementation. From this, the relationships between graph nodes is drawn by querying a spans service name
+                and that of its parent span, which gives both the relationship and the directionality of said relationship. Nodes and edges are then often annotated with various metrics derived from the various
+                span fields and tags, with average or percentiles of span durations as well as error rates and number of requests per unit of time being the standard figures on display. Figure~\ref{fig:risingstacktopo}
+                is an example of such an implementation from The RisingStack's NodeJS monitoring platform. Often misrepresented as features of \textit{observability} platforms or services, graphs of such kind are
+                more aptly described as features of \textit{monitoring} platforms or services. The line between the two terms is often intentionally blurred by vendors which provide monitoring services looking to sell
+                to companies who are in need of observability services. Monitoring is commonly described as being how \textbf{known-unknowns} are handled, including defining thresholds for values on metrics such as
+                error rates or response times, most commonly working with pre-aggregated data of low dimensionality to give a quick, overview of the system in aggregate. Such systems are ideally tailored towards 
+                answering the questions one knows to ask beforehand, hence known-unknowns, which can range from questions such as does the database server require more CPU power or if a recent deployment of a service
+                was correlated with an increase in API errors. 
+
+                \begin{figure}[hbt!]
+                    \centering
+                    \copyrightbox[r]{
+                        \includegraphics[scale=0.14]{service-topo-risingstack.png}
+                    }{\tiny\textcopyright{Gergely Nemeth on The RisingStack blog}}
+                    \caption{Example of the Microservices Topology visualization from RisingStack's monitoring platform, showing a basic topology overview with key metrics based on traces.}
+                    \label{fig:risingstacktopo}
+                \end{figure}
+
+                In contrast, observability is all about the \textbf{unknown-unknowns}, being able to ask different, unforeseen questions to a highly dimensional dataset with high cardinality fields that allow
+                for arbitrary operations on raw, non-aggregated events, with the ability to drill down on individual events in the set from an aggregate overview. This allows one to receive answers to the questions 
+                on the behaviour of a system, in arbitrary aggregate down to an individual level. This sets the tone for what an advanced service topology visualisation should provide to allow for it to be distinguished 
+                from standard monitoring alternatives. 
+
+                The first vital operation that this visualisation should have is the ability to filter out traces from the working dataset arbitrarily. 
+
+                % filter arbitrarily, group to hide noisy services. Default group on in-out service names. Read we've been doing it wrong, beautiful piece. Still show metrics, numbers change after grouping/filtering
+
+                % cookie example or 'what do these have in common'
 
         \newpage          
         \section{Implementations}    
@@ -641,6 +671,7 @@
 
     \chapter{Evaluation}
         %  Not all languages have runtime info for source file and line num eg C, C++
+        % performance
     
     \chapter{Conclusion \& Future}
     % showing multiple stacktraces from spans running at the same time
@@ -674,7 +705,7 @@
         \url{https://opentelemetry.io/}
 
         \bibitem{udptagsize}
-        Yuri Shkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
+        YurzShkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
         31st May, 2018 \\
         \url{https://github.com/jaegertracing/jaeger-client-go/pull/316#issuecomment-393386461}
 

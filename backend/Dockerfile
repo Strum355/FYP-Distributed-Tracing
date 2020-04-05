@@ -1,4 +1,4 @@
-FROM gradle:5.6.2-jdk8 AS dev
+FROM gradle:6.3.0-jdk8 AS dev
 
 WORKDIR /topology
 
@@ -10,7 +10,7 @@ RUN gradle compileKotlin
 
 ENTRYPOINT [ "bash", "run.sh" ]
 
-FROM gradle:5.6.2-jdk8 AS builder
+FROM gradle:6.3.0-jdk8 AS builder
 
 WORKDIR /topology
 

@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import * as vscode from 'vscode'
-import { StackFrame, Trace } from './types'
+import { StackFrame, Tag, Trace } from './types'
 
 export class Runtime extends EventEmitter {
   // a stack of source file paths to step forward and back
@@ -23,6 +23,8 @@ export class Runtime extends EventEmitter {
   private basePath = ''
   // mapping of service name to main path
   private mapping: Map<string, string> = new Map()
+  // holds all baggage KV from all spans
+  private baggageKV: Tag[] = []
 
   constructor() {
     super()
@@ -42,8 +44,25 @@ export class Runtime extends EventEmitter {
     console.log(`[RUNTIME] started ${this.basePath}`)
     console.log(`[RUNTIME] GraphQL Response: ${JSON.stringify(this.trace, null, 4)}`)
     
+    this.collectBaggageKV()
+
     await this.loadNextSpan()
     this.step(false)
+  }
+
+  // Baggage KV are stored as a log point in the span they were created on.
+  // Theyre only propagated and can be queried on the span context but otherwise
+  // arent attached to other spans
+  private collectBaggageKV() {
+    this.trace?.spans.filter(s => s.logs.length > 0).forEach(s => {
+      s.logs.forEach(log => {
+        this.baggageKV.push({
+          key: log.fields.filter(f => f.key === "key")[0].value,
+          value: log.fields.filter(f => f.key === "value")[0].value,
+          type: "string"
+        })
+      })
+    })
   }
 
   private async getMappingPath(service: string): Promise<string> {
@@ -61,6 +80,18 @@ export class Runtime extends EventEmitter {
     this.mapping.set(service, mapping)
 
     return mapping
+  }
+
+  public getSpanTags(): Tag[] | undefined {
+    return this.trace?.spans[this.spanIdx].tags.filter(t => !t.key.startsWith('_tracestep'))
+  }
+
+  public getProcessTags(): Tag[] | undefined {
+    return this.trace?.spans[this.spanIdx].processTags
+  }
+
+  public getBaggageTags(): Tag[] | undefined {
+    return this.baggageKV
   }
 
   private async loadNextSpan() {
@@ -99,6 +130,7 @@ export class Runtime extends EventEmitter {
     }
   }
 
+  // TODO: figure out when to do this.spanIdx--
   public async step(reverse: boolean): Promise<boolean> {
     if(!reverse) {
       if(this.stackIdx === this.sourceFileStack.length-1) {

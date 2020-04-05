@@ -20,7 +20,8 @@ public data class Span(
     val operationName: String,
     val serviceName: String,
     val logs: List<LogPoint>?,
-    val tags: List<Tag>?
+    val tags: List<Tag>?,
+    val processTags: List<Tag>?
 ) {
     companion object {
         fun fromSearchHit(hit: SearchHit): Span {
@@ -34,7 +35,8 @@ public data class Span(
             val parentSpan = (source.get("references") as List<Map<String, String>>).getOrElse(0) { emptyMap() }["spanID"]
             val logs = (source.get("logs") as List<Map<String, Any>>).map { LogPoint.fromSearchHitMap(it) }
             val tags = (source.get("tags") as List<Map<String, String>>).map { Tag.fromSearchHitMap(it) }
-            return Span(traceID, spanID, parentSpan, duration, startTime, operationName, serviceName, logs, tags)
+            val processTags = ((source.get("process") as Map<String, Any>)["tags"] as List<Map<String, String>>).map { Tag.fromSearchHitMap(it) }
+            return Span(traceID, spanID, parentSpan, duration, startTime, operationName, serviceName, logs, tags, processTags)
         }
     }
 }
@@ -47,11 +49,11 @@ public data class Tag(val key: String, val type: String, val value: String) {
     }
 }
 
-public data class LogPoint(val timestamp: Int, val fields: List<LogPointField>) {
+public data class LogPoint(val timestamp: Long, val fields: List<LogPointField>) {
     companion object {
         fun fromSearchHitMap(map: Map<String, Any>): LogPoint {
             return LogPoint(
-                map.get("timestamp") as Int,
+                map.get("timestamp") as Long,
                 (map.get("fields") as List<Map<String, String>>).map { LogPointField.fromSearchHitMap(it) }
             )
         }

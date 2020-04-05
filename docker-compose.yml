@@ -33,6 +33,8 @@ services:
     ports:
       - 6831:6831/udp
       - 16686:16686
+      - 14268:14268
+      - 14269:14269
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jaeger.rule=Host(`jaeger.localhost`)"
@@ -72,9 +74,9 @@ services:
     build:
       target: dev
       context: ./backend
-    container_name: fyp-topology
+    container_name: fyp-backend
     volumes: 
-      - ./service_topology/backend/src:/topology/src
+      - ./backend:/topology
     labels: 
       - "traefik.enable=true"
       - "traefik.http.routers.topology.rule=Host(`backend.localhost`)"

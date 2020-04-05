@@ -64,9 +64,22 @@ fun Application.module() {
 
         type<Span> {
             property<StackTrace>("stacktrace") { 
-                resolver { span ->
+                resolver { span: Span ->
                     StackTrace.fromSpan(span)
                 }
+             }
+             property<List<LogPoint>?>("logs") {
+                 resolver { span: Span, eventType: String? ->
+                    println(eventType)
+                    if(eventType == null) {
+                        return@resolver span.logs
+                    }
+                    span.logs?.filter { 
+                        it.fields.any { 
+                            fieldEl: LogPointField -> fieldEl.key == "event" && fieldEl.value == eventType 
+                        } 
+                    }
+                 }
              }
         }
     }

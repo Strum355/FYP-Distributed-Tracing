@@ -2,7 +2,7 @@ import ApolloClient from 'apollo-boost'
 import gql from 'graphql-tag'
 import { basename } from 'path'
 import * as vscode from 'vscode'
-import { Breakpoint, BreakpointEvent, InitializedEvent, LoggingDebugSession, OutputEvent, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
+import { Breakpoint, BreakpointEvent, Handles, InitializedEvent, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Runtime } from './runtime'
 import { TraceResponse } from "./types"
@@ -19,6 +19,11 @@ export class DebugSession extends LoggingDebugSession {
 
   private runtime: Runtime
   private configurationDone = new Subject()
+  private variableHandles = new Handles<string>()
+
+  private tagsRef = this.variableHandles.create("tags")
+  private processRef = this.variableHandles.create("process")
+  private baggageRef = this.variableHandles.create("baggage")
 
   public constructor() {
     super()
@@ -94,7 +99,30 @@ export class DebugSession extends LoggingDebugSession {
   }
 
   protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments, request?: DebugProtocol.ScopesRequest): void {
-    response.body.scopes = []
+    console.log(`[DEBUGGER] scopes request: ${JSON.stringify(args)}`)
+    response.body = {
+      scopes: [
+        new Scope("Span Tags", this.tagsRef, false),
+        new Scope("Process Tags", this.processRef, false),
+        new Scope("Baggage", this.baggageRef, false)
+      ]
+    }
+    this.sendResponse(response)
+  }
+
+  protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.VariablesRequest): void {
+    console.log(`[DEBUGGER] variables request: ${JSON.stringify(args)}`)
+    const ref = this.variableHandles.get(args.variablesReference)
+    console.log(`[DEBUGGER] ref ${ref}`)
+    response.body = {
+      variables: (ref === "tags" ? this.runtime.getSpanTags() : (ref === "baggage" ? this.runtime.getBaggageTags() : this.runtime.getProcessTags()))?.map(t => ({
+        name: t.key,
+        value: t.value,
+        type: t.type,
+        variablesReference: 0
+      })) || []
+    }
+
     this.sendResponse(response)
   }
 
@@ -142,36 +170,54 @@ export class DebugSession extends LoggingDebugSession {
       ignoreFocusOut: true,
     })
 
-    const resp = await client.query<TraceResponse>({
-      query: gql`
-        query findTrace($traceID: String!) {
-          findTrace(traceID: $traceID) {
-            traceID
-            spans {
-              spanID
-              startTime
-              serviceName
-              stacktrace {
-                stackFrames {
-                  packageName
-                  filename
-                  line
+    try {
+      const resp = await client.query<TraceResponse>({
+        query: gql`
+          query findTrace($traceID: String!) {
+            findTrace(traceID: $traceID) {
+              traceID
+              spans {
+                spanID
+                startTime
+                serviceName
+                stacktrace {
+                  stackFrames {
+                    packageName
+                    filename
+                    line
+                  }
                 }
-              }
-              tags {
-                key
-                value
-              }
-            }  
-          }
-        }`,
-      variables: {
-        traceID: traceID,
-      }
-    })
-    
-    this.runtime.start(resp.data.findTrace)
-    this.sendResponse(response)
+                tags {
+                  key
+                  value
+                  type
+                }
+                processTags {
+                  key
+                  value
+                  type
+                }
+                logs(eventType: "baggage") {
+                  fields {
+                    key
+                    type
+                    value
+                  }
+                }
+              }  
+            }
+          }`,
+        variables: {
+          traceID: traceID,
+        }
+      })
+      this.runtime.start(resp.data.findTrace)
+      this.sendResponse(response)
+    } catch(e) {
+      response.success = false
+      response.message = e.toString()
+      this.sendResponse(response)
+    }
   }
 
   protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {

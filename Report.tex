@@ -2,7 +2,7 @@
 
 \author{\textbf{Noah Santschi-Cooney}
 \\\\\\\small{Final Year Project - BSc in Computer Science}
-\\\\\\\small{Jason Quinlan}
+\\\\\\\small{Dr. Jason Quinlan}
 \\\\\\\small{Department of Computer Science}
 \\\small{University College Cork}}
 \title{\textbf{Alternative Visualisations of Distributed Tracing data in a complex, large-scale distributed system}}
@@ -186,11 +186,11 @@
 
         \section{Project Summary}
             This project builds upon the concepts of distributed tracing, exploring ways to provide novel and high-value derivable ways of visualizing and presenting distributed tracing
-            data to developers. Modern standards, tools and integrations will be utilized to test the viability of less common and unexplored visualizations of distributed tracing data.
+            data to developers. Modern standards, tools and integrations will be utilized to test the viability of less common and unexplored visualisations of distributed tracing data.
 
             In Chapter 2, the history of distributed tracing will be introduced, while also covering some common vocabulary relevant to the topic and where they originated. It will also
             cover some of the standards that this project builds around. In Chapter 3, the project architecture design choices will be discussed and how they impacted the project, ranging
-            from the frontend frameworks chosen to the backend API and supporting services that power the various implementations. Finally, the different visualizations will be evaluated
+            from the frontend frameworks chosen to the backend API and supporting services that power the various implementations. Finally, the different visualisations will be evaluated
             on the value the provide as well as the feasibility of utilizing them in real-world scenarios. Chapters 5 and 6 will draw the writeup to a conclusion, detailing the closing
             thoughts and putting forward ideas for future work on the ideas explored in this project.
 
@@ -241,7 +241,7 @@
                 to specify their parent span as well as their common trace, without propagating an entire span, which may prove costly as more
                 tags and logs are attached to a span.
 
-                Figure~\ref{fig:opentracing} shows a timeline based visualization of where the different components of the OpenTracing API interface are utilized in
+                Figure~\ref{fig:opentracing} shows a timeline based visualisation of where the different components of the OpenTracing API interface are utilized in
                 the larger picture of creating a span through use of distributed context propagation in the span context construct to build the span tree across
                 process and network boundaries.
                 
@@ -351,7 +351,7 @@
                 
                 The OpenTracing platform, Jaeger, was chosen for this project. Jaeger is wholly self-hostable, providing a convenient setup for single-machine development purposes with
                 a single, all-inclusive binary available from the distribution archives, as well as a pre-built \textit{Docker} image published to DockerHub. The full Jaeger package,
-                available in whole in the aforementioned all-inclusive formats, includes the trace collector, trace search and visualization user interface and agent.
+                available in whole in the aforementioned all-inclusive formats, includes the trace collector, trace search and visualisation user interface and agent.
 
                 By default, the all-in-one Jaeger distribution stores all trace data in-memory. For convenience to persist data in between machine reboots, the JSON document search engine
                 database, \textit{Elasticsearch}, was chosen as the storage backend for Jaeger, as one of two possible choices alongside \textit{Apache Cassandra}, a column store document
@@ -423,7 +423,7 @@
                     statement, while also resulting in potentially more data being sent down the wire.
 
                     \newpage
-                    \begin{lstlisting}[caption={A GraphQL query to fetch a trace object and the span ID of each of its spans compared to a query to fetch the trace object, its spans and every
+                    \begin{lstlisting}[caption={GraphQL query to fetch a trace object and the span ID of each of its spans vs a query to fetch the trace object, its spans and every
                         tag of every span.}, label={lst:graphTrace}, language=GraphQL, gobble=24]
                         {
                             query findTrace(traceID: "asdf") {
@@ -441,7 +441,6 @@
                                     spanID
                                     tags {
                                         key
-                                        type
                                         value
                                     }
                                 }
@@ -469,77 +468,82 @@
                 Built in Typescript, a Javascript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
                 and the editor to provide many of the same features one would expect from traditional debugger tools such as the GNU Project Debugger (GDB).
 
-                Figure~\ref{fig:debug-arch} displays the general architecture of how editors and tools utilize the programs that implement the Debug Adapter Protocol to interact with
-                lower level debug runtimes, such as GDB etc. Each editor or tool would contain a small, lightweight shim, one per debug adapter, that launches the debug adapter with the
-                appropriate configuration, potentially with user supplied configuration data, before handing off to the in-editor/tool generic debugger that interacts with the now running
-                debug adapter through the Debug Adapter Protocol.
+                \subsubsection{Debug Adapter Protocol}
+                    Figure~\ref{fig:debug-arch} displays the general architecture of how editors and tools utilize the programs that implement the Debug Adapter Protocol to interact with
+                    lower level debug runtimes, such as GDB etc. Each editor or tool would contain a small, lightweight shim, one per debug adapter, that launches the debug adapter with the
+                    appropriate configuration, potentially with user supplied configuration data, before handing off to the in-editor/tool generic debugger that interacts with the now running
+                    debug adapter through the Debug Adapter Protocol.
 
-                The Debug Adapter for this part of the project combines combines the three necessary parts in the one codebase, the shim, debug adapter and debugger runtime, for convenience
-                in developing the proof of concept. It builds off the Visual Studio Code mock debug adapter, a sample codebase implementing the shim, debug adapter and a dummy debugger
-                runtime in one. Heavily inspired by asynchronous event-based programming as is commonplace in the NodeJS ecosystem, the debug adapter invokes asynchronous methods on the 
-                debugger runtime when it receives requests from the editor or tool in the Debug Adapter Protocol format, upon which the debugger runtime may emit events that the debug adapter
-                translates into Debug Adapter Protocol events for the editor or tool to consume.
+                    The Debug Adapter for this part of the project combines combines the three necessary parts in the one codebase, the shim, debug adapter and debugger runtime, for convenience
+                    in developing the proof of concept. It builds off the Visual Studio Code mock debug adapter, a sample codebase implementing the shim, debug adapter and a dummy debugger
+                    runtime in one. Heavily inspired by asynchronous event-based programming as is commonplace in the NodeJS ecosystem, the debug adapter invokes asynchronous methods on the 
+                    debugger runtime when it receives requests from the editor or tool in the Debug Adapter Protocol format, upon which the debugger runtime may emit events that the debug adapter
+                    translates into Debug Adapter Protocol events for the editor or tool to consume.
 
-                \begin{figure}[hbt!]
-                    \centering
-                    \copyrightbox[r]{
-                        \includegraphics[scale=0.4]{debug-arch}
-                    }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
-                    \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
-                        editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
-                        Adapters.}
-                    \label{fig:debug-arch}
-                \end{figure}
+                    \begin{figure}[hbt!]
+                        \centering
+                        \copyrightbox[r]{
+                            \includegraphics[scale=0.4]{debug-arch}
+                        }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
+                        \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
+                            editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
+                            Adapters.}
+                        \label{fig:debug-arch}
+                    \end{figure}
 
-                Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it should fetch the spans and their metadata for the trace ID, load the 
-                source code files for each span and allow the user to step through the code on a span-by-span basis (or more granular). If successful, the user would be able to see the
-                source code file and line in which the current span was started and step back and forth between spans and their respective source code files and lines. Given the focus
-                around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase, assuming that the codebases for the other 
-                services also reside on the user's machine.
-                
-                The main approach to making this set of requirements possible is by utilizing the tag constructs defined in the OpenTracing specification to carry additional runtime or
-                compile time information that provides enough information to the debugger runtime. This can be done by implementing shims that wrap OpenTracing trace implementations with
-                methods that add the required information as tags to newly created span instances. When the debugger runtime queries the backend API, it can request an additional field on
-                the span types that the backend GraphQL resolver resolves by transforming the information gathered by the shims into a format more useful to the debugger runtime than the
-                raw collected information. This results in being able to interface with the same GraphQL query as the project idea that follows this part, while not incurring the 
-                transformation costs in the following idea.
-                % TODO: word this better
+                \subsubsection{Concept}
+                    Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it should fetch the spans and their metadata for the trace ID, load the 
+                    source code files for each span and allow the user to step through the code on a span-by-span basis (or more granular). If successful, the user would be able to see the
+                    source code file and line in which the current span was started and step back and forth between spans and their respective source code files and lines. Given the focus
+                    around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase, assuming that the codebases for the other 
+                    services also reside on the user's machine.
+                    
+                    The main approach to making this set of requirements possible is by utilizing the tag constructs defined in the OpenTracing specification to carry additional runtime or
+                    compile time information that provides enough information to the debugger runtime. This can be done by implementing shims that wrap OpenTracing trace implementations with
+                    methods that add the required information as tags to newly created span instances. When the debugger runtime queries the backend API, it can request an additional field on
+                    the span types that the backend GraphQL resolver resolves by transforming the information gathered by the shims into a format more useful to the debugger runtime than the
+                    raw collected information. This results in being able to interface with the same GraphQL query as the project idea that follows this part, while not incurring the 
+                    transformation costs in the following idea.
+                    % TODO: word this better
 
-                In practice, there are a number of challenges that arise in various parts of this concept; gathering the information required to pinpoint the source file and line varies 
-                in format across different programming languages, amount of stack trace information that is to be or that can be gathered and its formats across different programming 
-                languages, mapping different services to the location in the filesystem of their codebase as well as handling spans emitted from services not appropriately instrumented 
-                for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
+                    In practice, there are a number of challenges that arise in various parts of this concept; gathering the information required to pinpoint the source file and line varies 
+                    in format across different programming languages, amount of stack trace information that is to be or that can be gathered and its formats across different programming 
+                    languages, mapping different services to the location in the filesystem of their codebase as well as handling spans emitted from services not appropriately instrumented 
+                    for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
 
-                When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
-                The first approach is to simply query the runtime, where applicable, for the file path and line number associated with the function that invoked the span creation. This is often
-                a relatively cheap operation, with a small footprint in the amount of data that a span is tagged with. The main downside of this approach is that while it results in a small 
-                amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime. With this information, the debugger runtime is
-                limited to jumping between those single, individual points in the code at which the spans are created (this could be expanded to also wrap the log-point calls to do the same).
-                
-                The second approach involves querying the runtime for an entire stacktrace leading up to this point. With this approach, there is considerably more data, with all the function
-                calls of the stack frame tree branch leading up to the span creation being gathered, allowing for the possibility to step back and forth at the function level rather than simply
-                at the span level. In both these instances, the data is attached to spans as tags. This approach was chosen to be explored for the project due to the larger potential that accompanies
-                the greater amount of data. For further processing outlined in the following paragraph, the programming language from which the span originates is added as a tag to the span.
-                There are a few downsides to this approach and possible workarounds that will also be discussed.
-                
-                In many language implementations of the Jaeger tracer, tag values are limited in length to either 256 or 1024 characters. When dealing with stacktraces, this limit is too 
-                restrictive for storing entire stacktraces. This is due to an outstanding issue in Jaeger client implementations when using UDP as the transport protocol, as span sizes
-                would exceed the maximum UDP packet size of 65535 bytes\cite{udptagsize}. This makes using HTTP as the span transport method a hard requirement to avoid UDP packets being
-                dropped, causing entire spans to be lost. The client implementations also provide an interface for changing the max tag value length, which must be utilised to prevent the truncating
-                of the stacktraces. As this number cannot be set on a per-span basis, it must be set at a reasonably large number ahead of time based on previous examples of possible stacktrace sizes
-                or the maximum value of an integer for the given platform. Another downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often 
-                be considerably more expensive than adding simple tags to a span. Unfortunately, sampling rules in the Jaeger client implementations, the processes by which it is decided whether or 
-                not spans are exported, are only applied to log points and the final reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if 
-                the span will never be reported. Despite implementing head-based sampling, where it is know when the root span is created whether or not the trace will be reported, the API does not 
-                expose an interface for querying this fact. For this reason, it was important to make the operation as cheap as possible, leaving as much stacktrace transformations as possible to 
-                query time, when the debugger runtime requests a trace from the backend.
+                \subsubsection{Collecting and ParsingRuntime Data}
+                    When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
+                    The first approach is to simply query the runtime, where applicable, for the file path and line number associated with the function that invoked the span creation. This is often
+                    a relatively cheap operation, with a small footprint in the amount of data that a span is tagged with. The main downside of this approach is that while it results in a small 
+                    amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime. With this information, the debugger runtime is
+                    limited to jumping between those single, individual points in the code at which the spans are created (this could be expanded to also wrap the log-point calls to do the same).
+                    
+                    The second approach involves querying the runtime for an entire stacktrace leading up to this point. With this approach, there is considerably more data, with all the function
+                    calls of the stack frame tree branch leading up to the span creation being gathered, allowing for the possibility to step back and forth at the function level rather than simply
+                    at the span level. In both these instances, the data is attached to spans as tags. This approach was chosen to be explored for the project due to the larger potential that accompanies
+                    the greater amount of data. For further processing outlined in the following paragraph, the programming language from which the span originates is added as a tag to the span.
+                    There are a few downsides to this approach and possible workarounds that will also be discussed.
+                    
+                    In many language implementations of the Jaeger tracer, tag values are limited in length to either 256 or 1024 characters. When dealing with stacktraces, this limit is too 
+                    restrictive for storing entire stacktraces. This is due to an outstanding issue in Jaeger client implementations when using UDP as the transport protocol, as span sizes
+                    would exceed the maximum UDP packet size of 65535 bytes\cite{udptagsize}. This makes using HTTP as the span transport method a hard requirement to avoid UDP packets being
+                    dropped, causing entire spans to be lost. The client implementations also provide an interface for changing the max tag value length, which must be utilised to prevent the truncating
+                    of the stacktraces. As this number cannot be set on a per-span basis, it must be set at a reasonably large number ahead of time based on previous examples of possible stacktrace sizes
+                    or the maximum value of an integer for the given platform. Another downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often 
+                    be considerably more expensive than adding simple tags to a span. Unfortunately, sampling rules in the Jaeger client implementations, the processes by which it is decided whether or 
+                    not spans are exported, are only applied to log points and the final reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if 
+                    the span will never be reported. Despite implementing head-based sampling, where it is know when the root span is created whether or not the trace will be reported, the API does not 
+                    expose an interface for querying this fact. For this reason, it was important to make the operation as cheap as possible, leaving as much of the stacktrace transformations as possible to 
+                    query time, when the debugger runtime requests a trace from the backend.
 
-                With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is amended by adding a field to the span type with an associated resolver and 
-                types that define a stacktrace and its individual stack frames. This resolver reads the stored stacktrace and the programming language associated with the span to process it into a 
-                stacktrace object usable for the debugger runtime. As each language has a different format for its stacktraces, a stacktrace parser must be created for each language supported. These
-                will parse the raw stacktrace strings and returns them as a parsed and formatted stacktrace object to the GraphQL resolver. Listing~\ref{lst:stack} shows the updated GraphQl schema
-                with the unchanged sections filtered out. 
+                \subsubsection{Interfacing GraphQL API with Debug Adapter}
+                    With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is amended by adding a field to the span type with an associated resolver and 
+                    types that define a stacktrace and its individual stack frames. This resolver reads the stored stacktrace and the programming language associated with the span to process it into a 
+                    stacktrace object usable for the debugger runtime. As each language has a different format for its stacktraces, a stacktrace parser must be created for each language supported. These
+                    will parse the raw stacktrace strings and returns them as a parsed and formatted stacktrace object to the GraphQL resolver. Listing~\ref{lst:stack} shows the updated GraphQL schema
+                    with the unchanged sections filtered out. 
 
+                \newpage
                 \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects, unchanged fields and objects filtered.}, language=GraphQL, gobble=20, label={lst:stack}]
                     type Span {
                         // ...
@@ -559,23 +563,35 @@
                     }
                 \end{lstlisting}
 
-                \newpage
                 In this format, the debugger runtime has a more language agnostic representation of the stacktraces collected over the lifetime of a trace. There are still differences
                 in how absolute local paths are resolved from this information in order to load the correct file in the editor from the users local filesystem, from differences in how
                 codebases are structured into different packages for encapsulation and modularisation, as well as where dependencies are stored in the filesystem. For simplicity, 
                 resolving dependencies was not included in this project.
 
                 Alongside showing a stacktrace and the line in the file where the current span was created (or in the case of traditional debuggers, the line it has halted execution on),
-                editors often have a panel dedicated for displaying local and global variables for the current stackframe and execution context. Due to largely performance reasons, it is
+                editors often have a panel dedicated for displaying local and global variables for the current stack frame and execution context. Largely due to performance reasons, it is
                 not possible to attain this level of information on local and global variables when in the distributed tracing context unlike when using a halting debugger, assuming that 
-                \textit{DWARF} symbols (a name to complement \textit{Executable and Linkable Format (ELF)}, later assigned as an acronym for \textit{Debugging With Arbitrary Record Formats})
-                \cite{dwarf} are still baked into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. 
-                Instead of this, a spans tags can be displayed in said panel in place of variables. This works best when spans are heavily tagged with rich, high cardinality metadata which
-                gives greater insight into a service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to
-                those with a common set of tags that exhibit certain behaviour.
+                \textit{DWARF} symbols (\textit{Debugging With Arbitrary Record Formats}, a standardized debugging data format embedded in executable binaries)\cite{dwarf} are still baked 
+                into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. Instead of this, a spans tags can 
+                be displayed in said panel in place of variables. This works best when spans are heavily tagged with rich, high cardinality metadata which gives greater insight into a 
+                service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to those with a common set of tags
+                that exhibit certain behaviour.
                 % TODO: is this the right place for that last line? why else would we want high cardinality 
 
+            \newpage
             \subsection{Service Topology Frontend}
+                In the service topology part of the project, the aim is to explore how to increase the value derivable from graph representations of the topology of a service architecture, at 
+                both an individual trace level and in aggregate. A common visualisation in many vendors in basic formats, they are commonly based on a type of directed graph called a 
+                \textit{force-directed graph} due to its aesthetically pleasing properties.
+        
+                A basic service topology graph can give a quick overview of the dependencies between different services in a distributed system. However, it has little use outside of making ones
+                boss happy. For developers and administrators to derive tangible value from such a visualization, there is a need for a more dynamic system. The ability to generate views based 
+                on arbitrary attributes would allow for users of the system to create more personalized and focused graphs based on their needs, such as grouping by high cardinality fields like 
+                end-user IP address, error rates, response times etc\cite{doingitwrongtopo}.
+        
+                The aim of this section of the project was to explore the viability and value of creating such a system, with the addition of being able to replay individual traces instead of
+                being presented an aggregated view. This took inspiration from the Massachusetts Bay Transit Authority (MBTA) data visualization project\cite{mbta}.
+
 
         \newpage          
         \section{Implementations}    
@@ -619,7 +635,7 @@
                     }
                 \end{lstlisting}
             \subsection{Debug Adapter}
-            
+                % baggage, tags, process tags
             \subsection{Service Topology Frontend}
             
 
@@ -666,5 +682,15 @@
         Michael J.Eager, \textit{Introduction to the DWARF Debugging Format.}
         Eager Consulting, April 2012 \\
         \url{http://www.dwarfstd.org/doc/Debugging%20using%20DWARF-2012.pdf}
+
+        \bibitem{doingitwrongtopo}
+        Cindy Sridharan, \textit{Distributed Tracing - we've been doing it wrong.} \\
+        Medium, 2nd July 2019 \\
+        \url{https://medium.com/@copyconstruct/distributed-tracing-weve-been-doing-it-wrong-39fc92a857df}
+
+        \bibitem{mbta}
+        Mike Barry, Brian Card, \textit{Visualizing MBTA Data.}
+        10th June 2014 \\
+        \url{https://mbtaviz.github.io/}
     \end{thebibliography}
 \end{document}

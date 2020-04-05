@@ -10,6 +10,8 @@ export type Span = {
   serviceName: string
   startTime: number
   tags: Tag[]
+  processTags: Tag[]
+  logs: LogPoint[]
   stacktrace: StackTrace
 }
 
@@ -32,8 +34,20 @@ export const equalStackFrame = (s1: StackFrame, s2: StackFrame): boolean => {
 export type Tag = {
   key: string
   value: string
+  type: string
 }
  
 export type TraceResponse = {
   findTrace: Trace
+}
+
+export type LogPoint = {
+  timestamp: number
+  fields: LogPointField[]
+}
+
+export type LogPointField = {
+  key: string
+  type: string
+  value: string
 }

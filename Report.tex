@@ -365,16 +365,22 @@
 
             \subsection{Backend API}
                 To query for and transform the distributed tracing data stored in Elasticsearch, an HTTP API was developed for the two codebases of the ideas explored to interface with.
-                Written in Kotlin, a programming language that runs on the Java Virtual Machine, it provides a GraphQL interface to fetch the trace data from Elasticsearch. It was 
-                decided that Kotlin would be the language used for the backend after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
-                that utilized the Kotlin \textit{Domain Specific Language} (DSL) to define the queries and schemas respectively.
+                It implements a GraphQL HTTP API server, the concepts of which are explained in detail below, to fetch the trace data from Elasticsearch. 
                 
+                \begin{figure}[hbt!]
+                    \centering
+                    \includegraphics[scale=0.2]{arch.png}
+                    \caption{Basic diagram illustrating the architecture design for a sample system, including applications instrumented to emit trace data, the Jaeger agents and/or collectors,
+                    the database in which trace data is persisted and the GraphQL HTTP API that the clients such as those implemented as part of this project interact with to obtain trace data.}
+                    \label{}
+                \end{figure}
+
                 \subsubsection{GraphQL}
                     As an alternative to traditional RESTful HTTP services, GraphQL is both a query language and a server-side runtime for executing queries against a defined data schema
                     laid out by the type system. The type system can be shared between both servers and clients alike, allowing for a common, known data schema. The data schema consists of 
                     user defined object types representing the data, as well as two special types: the \textit{Query} type and the \textit{Mutation} type. These define the entrypoints into
                     the GraphQL server, allowing for the fetching and modification of data, and can take a defined set of arguments as defined in the schema, which may be defined as being
-                    optional.\newpage
+                    optional.
 
                     \begin{lstlisting}[caption={The base GraphQL schema, defining a query and data types for the trace data.}, language=GraphQL, gobble=24]
                         type Query {
@@ -422,7 +428,6 @@
                     resolving. The second query also requests the \texttt{spans} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
                     statement, while also resulting in potentially more data being sent down the wire.
 
-                    \newpage
                     \begin{lstlisting}[caption={GraphQL query to fetch a trace object and the span ID of each of its spans vs a query to fetch the trace object, its spans and every
                         tag of every span.}, label={lst:graphTrace}, language=GraphQL, gobble=24]
                         {
@@ -543,7 +548,6 @@
                     will parse the raw stacktrace strings and returns them as a parsed and formatted stacktrace object to the GraphQL resolver. Listing~\ref{lst:stack} shows the updated GraphQL schema
                     with the unchanged sections filtered out. 
 
-                \newpage
                 \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects, unchanged fields and objects filtered.}, language=GraphQL, gobble=20, label={lst:stack}]
                     type Span {
                         // ...
@@ -578,7 +582,6 @@
                 a common set of tags that exhibit certain behaviour.
                 % TODO: is this the right place for that last line? why else would we want high cardinality 
 
-            \newpage
             \subsection{Service Topology Frontend}
                 In the service topology part of the project, the aim is to explore how to increase the value derivable from graph representations of the topology of a service architecture, at 
                 both an individual trace level and in aggregate. A common visualisation in many vendors in basic formats, they are commonly based on a type of directed graph called a 
@@ -615,9 +618,18 @@
                 In contrast, observability is all about the \textbf{unknown-unknowns}, being able to ask different, unforeseen questions to a highly dimensional dataset with high cardinality fields that allow
                 for arbitrary operations on raw, non-aggregated events, with the ability to drill down on individual events in the set from an aggregate overview. This allows one to receive answers to the questions 
                 on the behaviour of a system, in arbitrary aggregate down to an individual level. This sets the tone for what an advanced service topology visualisation should provide to allow for it to be distinguished 
-                from standard monitoring alternatives. 
+                from standard monitoring alternatives. Building off an event-based, non-aggregated dataset, the service topology graph will start out in a similar fashion to the aforementioned metrics based implementations,
+                however in contrast deriving metrics at query time from the events. This will serve as the foundation from which additional operations and features will build off.
 
-                The first vital operation that this visualisation should have is the ability to filter out traces from the working dataset arbitrarily. 
+                The first vital operation that this visualisation should have is the ability to filter out traces from the working dataset arbitrarily. This allows us to reduce the amount of noise affecting the metrics
+                on display at the edges and nodes, giving users the metrics specific to the new, filtered dataset view. As the user filters on various fields of arbitrary cardinality and with arbitrary dimensionality such 
+                as filtering on specific error codes, specific company identifiers or even metrics such as response times, the metrics such as HTTP error codes, response times etc that are displayed in the graph update 
+                dynamically to reflect the new working set consisting of the filtered entries from the original dataset, allowing for questions such as "\textit{Is a particular error associated with any particular service or node?}" 
+                or "\textit{What proportion of companies from a certain state with a certain cookie set are experiencing slow response times?}" to be asked without having instrumented for those particular questions, while being 
+                visualised in a service dependency style.
+
+                By virtue of the form of the visualisation, groupings of event objects are displayed inherently by service identifier or name. % inherently and always grouped. If grouping by a field, it is always also grouped with the 
+                % service name?
 
                 % filter arbitrarily, group to hide noisy services. Default group on in-out service names. Read we've been doing it wrong, beautiful piece. Still show metrics, numbers change after grouping/filtering
 
@@ -626,6 +638,9 @@
         \newpage          
         \section{Implementations}    
             \subsection{Backend API}
+                It was decided that Kotlin would be the language used for the backend after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
+                that utilized the Kotlin \textit{Domain Specific Language} (DSL) to define the queries and schemas respectively.
+
                 \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=20]
                     val schema = KGraphQL.schema { 
                         query("findTrace") { 
@@ -672,6 +687,8 @@
     \chapter{Evaluation}
         %  Not all languages have runtime info for source file and line num eg C, C++
         % performance
+
+        %  This alone, the ability to filter on metrics and arbitrary fields, is made possible already by storing events in non-aggregated form and deriving metrics dynamically. 
     
     \chapter{Conclusion \& Future}
     % showing multiple stacktraces from spans running at the same time

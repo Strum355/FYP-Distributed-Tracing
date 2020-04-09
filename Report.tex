@@ -63,7 +63,7 @@
         of software modules that could span many thousands of machines across multiple physical facilities. With the rise of modern Micro-service and 
         Service-Oriented designs, traditional tooling used to monitor application behaviour is no longer viable, especially at scale. 
         
-        To understanding the flow and life cycle of a unit of work performed in multiple pieces across various components in a distributed system, the concept of 
+        To understand the flow and life cycle of a unit of work performed in multiple pieces across various components in a distributed system, the concept of 
         Distributed Tracing was born. Distributed Tracing was first introduced to the mainstream world in 2010 after the publication of Google’s Dapper
         paper. Since then, various vendors have come out with their own Dapper-inspired services, most of them based off flame or timeline graphs. 
         
@@ -331,9 +331,11 @@
 
     \chapter{Design \& Implementation}
         \small{In this section, the different technical aspects will be covered, design decisions and components that played a role throughout the projects lifecycle.
-        This will include third party services and the roles they played.}
+        This will include third party services and platforms, and the roles they played. Implementation details such as languages and libraries used are discussed in the
+        \textbf{Implementation} sections. The \textbf{Designs and Architecture} sections cover protocols, APIs and interfaces that underpin the project, as well as the 
+        design and architecture decisions of the explored ideas in a language agnostic manner.}
 
-        \section{Architecture Design}
+        \section{Designs and Architectures}
             \subsection{Distributed Tracing API}
                 The OpenTracing API interface was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
                 source tooling built around the OpenTracing API. It is also widely supported by many third party vendors, including LightStep, DataDog and Honeycomb amongst 
@@ -344,7 +346,7 @@
                 This lowered the productivity barrier, as the OpenTelemetry backing components, including the collector, introduce more complexity than what exists in a simple
                 development-oriented OpenTracing setup.
 
-                Potential explorations around the OpenTelemetry API are discussed in the \textit{Future Work} section.
+                Potential explorations around the OpenTelemetry API are discussed in the \textbf{Future Work} section.
 
             \subsection{Supporting Services}
                 As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
@@ -360,33 +362,23 @@
                 for Elasticsearch, maintained by the developers of Elasticsearch, \textit{Kibana}, was used throughout the development of the project to view the raw trace data as it is 
                 represented in the database.
 
-                %In line with how the OpenTracing API works with regards to tracer implementations, the Jaeger language-specific instrumenting libraries must be used to inject the Jaeger 
-                %tracer implementation into the applications. A small number of 
-
-
             \subsection{Backend API}
                 To query for and transform the distributed tracing data stored in Elasticsearch, an HTTP API was developed for the two codebases of the ideas explored to interface with.
-                It implements a GraphQL HTTP API server, the concepts of which are explained in detail below, to fetch the trace data from Elasticsearch. 
-                
-                \begin{figure}[hbt!]
-                    \centering
-                    \includegraphics[scale=0.2]{arch.png}
-                    \caption{Basic diagram illustrating the architecture design for a sample system, including applications instrumented to emit trace data, the Jaeger agents and/or collectors,
-                    the database in which trace data is persisted and the GraphQL HTTP API that the clients such as those implemented as part of this project interact with to obtain trace data.}
-                    \label{}
-                \end{figure}
+                It implements a GraphQL HTTP API server, the concepts of which are explained in detail below, to fetch the trace data from Elasticsearch. Figure~\ref{fig:arch} illustrates
+                the final design of the architecture, showing where the backend API, trace data consuming clients (the implementations of the ideas that will be discussed), trace data collectors
+                outlined in the previous section as well as the applications that emit trace data fit into the picture.
 
                 \subsubsection{GraphQL}
                     As an alternative to traditional RESTful HTTP services, GraphQL is both a query language and a server-side runtime for executing queries against a defined data schema
                     laid out by the type system. The type system can be shared between both servers and clients alike, allowing for a common, known data schema. The data schema consists of 
                     user defined object types representing the data, as well as two special types: the \textit{Query} type and the \textit{Mutation} type. These define the entrypoints into
-                    the GraphQL server, allowing for the fetching and modification of data, and can take a defined set of arguments as defined in the schema, which may be defined as being
-                    optional.
+                    the GraphQL server, allowing for the fetching and modification of data by a named entrypoint. These entrypoints can take a defined set of arguments and return any type
+                    detailed in the schema, of which any argument and the return type may be denoted as being optional.
 
-                    \bigskip
+                    \newpage
                     \begin{lstlisting}[caption={The base GraphQL schema, defining a query and data types for the trace data.}, language=GraphQL, gobble=24]
                         type Query {
-                            findTrace(traceID: String): Trace
+                            findTrace(traceID: String!): Trace
                         }
 
                         type Trace {
@@ -471,12 +463,21 @@
                     possible solutions for these scenarios can be found in the future works section. The rest of this report works under the assumption of the Jaeger tracing platform
                     being employed, either as the sole distributed tracing system or complementary to a vendor hosted solution. 
 
+                \begin{figure}[hbt!]
+                    \centering
+                    \includegraphics[scale=0.2]{arch.png}
+                    \caption{Basic diagram illustrating the architecture design for a sample system, including applications instrumented to emit trace data, the Jaeger agents and/or collectors,
+                    the database in which trace data is persisted and the GraphQL HTTP API that the clients such as those implemented as part of this project interact with to obtain trace data.}
+                    \label{fig:arch}
+                \end{figure}
+
             \subsection{Debug Adapter}
                 For this part of the project, it was decided to develop the idea of integrating the telemetry from instrumented applications into the debugger API of Visual Studio Code.
                 Visual Studio Code was chosen as the editor for which the integration would be built due to its extensive extensibility and first class Debug Adapter Protocol support. 
                 Built in Typescript, a Javascript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
                 and the editor to provide many of the same features one would expect from traditional debugger tools such as the GNU Project Debugger (GDB).
 
+                \newpage
                 \subsubsection{Debug Adapter Protocol}
                     Figure~\ref{fig:debug-arch} displays the general architecture of how editors and tools utilize the programs that implement the Debug Adapter Protocol to interact with
                     lower level debug runtimes, such as GDB etc. Each editor or tool would contain a small, lightweight shim, one per debug adapter, that launches the debug adapter with the
@@ -492,7 +493,7 @@
                     \begin{figure}[hbt!]
                         \centering
                         \copyrightbox[r]{
-                            \includegraphics[scale=0.4]{debug-arch.png}
+                            \includegraphics[scale=0.35]{debug-arch.png}
                         }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
                         \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
                             editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
@@ -520,6 +521,7 @@
                     languages, mapping different services to the location in the filesystem of their codebase as well as handling spans emitted from services not appropriately instrumented 
                     for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
 
+                \newpage
                 \subsubsection{Collecting and Parsing Runtime Data}
                     When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
                     The first approach is to simply query the runtime, where applicable, for the file path and line number associated with the function that invoked the span creation. This is often
@@ -612,7 +614,6 @@
                 answering the questions one knows to ask beforehand, hence known-unknowns, which can range from questions such as does the database server require more CPU power or if a recent deployment of a service
                 was correlated with an increase in API errors. 
 
-                \medskip
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
@@ -628,6 +629,7 @@
                 from standard monitoring alternatives. Building off an event-based, non-aggregated dataset, the service topology graph will start out in a similar fashion to the aforementioned metrics based implementations,
                 however in contrast deriving metrics at query time from the events. This will serve as the foundation from which additional operations and features will build off.
 
+                \newpage
                 \subsubsection{Filtering}
                     The first vital operation that this visualisation should have is the ability to filter out traces from the working dataset arbitrarily. This allows us to reduce the amount of noise affecting the metrics
                     on display at the edges and nodes, giving users the metrics specific to the new, filtered dataset view. As the user filters on various fields of arbitrary cardinality such as specific error codes,
@@ -648,29 +650,26 @@
                     specific customers or not.
 
                     For the trivial example given, the graph already expands from five nodes to 50 nodes after grouping by customer identifier. For a company with more customers, this would become unwieldy in size and should therefore be used in 
-                    conjunction with the aforementioned filtering capabilities to bring the graph down to a manageable size by excluding grouping combinations where the key metrics are not above or below a defined threshold.
+                    conjunction with the aforementioned filtering capabilities to bring the graph down to a manageable size by excluding grouping combinations where the key metrics are not above or below a defined threshold or where a field does not
+                    match a given predicate.
                     
-                    These capabilities can also be expanded to reduce noise in the case of high cardinality service identifiers e.g. if using a serverless platform such as AWS Lambda in which each invocation may have a locally unique identifier, 
-                    the service topology graph may explode with a large number of one-time nodes. A form of conditional grouping, such as grouping all nodes where the service identifier begins with a given prefix, could vastly reduce the noise 
-                    from a graph featuring many nodes from ephemeral services as with serverless platforms or in companies with high deployment frequencies where service identifiers are uniquely suffixed on every deployment.
+                    These capabilities can also be expanded to reduce noise in the case of high cardinality service identifiers e.g. if using a serverless platform such as AWS Lambda in which each serverless function invocation may have a locally
+                    unique identifier with a common prefix, the service topology graph may explode with a large number of one-time nodes. A form of conditional grouping, such as grouping all nodes where the service identifier begins with a given prefix, 
+                    could vastly reduce the noise from a graph featuring many nodes from ephemeral services as with serverless platforms or in companies with high deployment frequencies where service identifiers are uniquely suffixed on every deployment.
                     
-                    % inherently and always grouped. If grouping by a field, it is always also grouped with the service name?
-
-                    % filter arbitrarily, group to hide noisy services. Default group on in-out service names. Read we've been doing it wrong, beautiful piece. Still show metrics, numbers change after grouping/filtering
-
                     % cookie example or 'what do these have in common'
 
         \newpage          
         \section{Implementations}    
             \subsection{Backend API}
                 It was decided that Kotlin would be the language used for the backend after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
-                that utilized the Kotlin \textit{Domain Specific Language} (DSL) to define the queries and schemas respectively.
+                that utilized the Kotlin type-safe builder constructs\cite{dsl} to declare GraphQL schemas and Elasticsearch queries in Kotlin-based \textit{Domain Specific Language} (DSL).
 
                 \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=20]
                     val schema = KGraphQL.schema { 
                         query("findTrace") { 
                             resolver { traceID: String ->
-                                esRepo.getTraceByID(traceID)
+                                // ...
                             }.withArgs { 
                                 arg<String> { name = "traceID"}
                             }
@@ -679,13 +678,14 @@
                         type<Span> {
                             property<StackTrace>("stacktrace") { 
                                 resolver { span ->
-                                    StackTrace.fromSpan(span)
+                                    // ...
                                 }
                             }
                         }
                     }                
                 \end{lstlisting}
 
+                \medskip
                 \begin{lstlisting}[caption={Comparison between Elasticsearch query using Kotlin DSL and the query in its JSON representation, where $\langle$traceID$\rangle$ refers
                     to a variable storing the trace identifier.}, language=Kotlin, gobble=20]
                     // Kotlin DSL
@@ -765,5 +765,9 @@
         Mike Barry, Brian Card, \textit{Visualizing MBTA Data.}
         10th June 2014 \\
         \url{https://mbtaviz.github.io/}
+
+        \bibitem{dsl}
+        JetBrains \textit{Type-Safe Builders} \\
+        \url{https://kotlinlang.org/docs/reference/type-safe-builders.html}
     \end{thebibliography}
 \end{document}

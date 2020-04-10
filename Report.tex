@@ -112,7 +112,7 @@
             apprehension of unforeseeable failures.
 
             As these new distributed system architectures evolved and became ever more widespread, traditional application monitoring tools consistently fell short of providing
-            developers and systems operators with the means to gain introspection into systems and their failures in production scenarios. Traditional monolithic systems often
+            developers and systems operators with the means to gain introspection into systems and their failures in production scenarios\cite{retrospective}. Traditional monolithic systems often
             utilized logging and metrics to gain introspection into the application and for alerting on rules respectively. For such systems, these process-scoped measures often 
             provided good insight into a system, correlating logs on their thread identifier/name as each thread would handle a single request sequentially. As these systems 
             adopted asynchronous execution models, where a request's lifetime may not be confined to a single thread, the previous approach no longer works, making observing
@@ -123,7 +123,7 @@
 
             \begin{figure}[htb!]
                 \centering
-                \includegraphics{concurrency.png}
+                \includegraphics[scale=1.1]{concurrency.png}
                 \caption{Evolution of concurrent systems.}
                 \label{fig:concurrency}
             \end{figure}
@@ -143,8 +143,10 @@
             \end{figure}
             
             However, it is often infeasible to use them in production scenarios due to their nature of halting complete execution of the process.
-            This makes it unsuitable for debugging issues that manifest in production that developers are finding it difficult to reproduce in development scenarios, as is often
-            a common scenario due to subtle parity differences between development and production systems.
+            This can make them unsuitable for debugging issues that manifest in production that developers are finding difficult to reproduce in development scenarios, as is often
+            a common scenario due to subtle parity differences between development and production systems. Section~\ref{sec:debugger} references a project that makes it possible
+            for users to use traditional debuggers in a production microservices scenario, covering the different trade-offs it makes as well as the differences between it and the
+            proposed solution outlined in this project.
 
         \section{Distributed Tracing}
             As traditional tooling is not designed to accommodate for this distributed concurrency system, new methodologies were needed to regain observability into the systems.
@@ -170,32 +172,38 @@
         \section{Motivation \& Goals}
             As distributed tracing is still a relatively new idea and only as of recently gathering mainstream interest in the industry, research and advancements on the topic are 
             as of yet still sparse. Current vendors often provide a limit set of capabilities and operations that can be performed on the data output from instrumented distributed systems,
-            most commonly simple expandable \textit{gantt charts} or, less commonly, simple, mostly static, service dependency graphs that offer little value and utility.
-
-            To further research in this field, the project will attempt to explore alternative and hopefully improved ways of consuming and presenting the data from instrumented
+            most commonly simple expandable \textit{gantt charts} or, less commonly, simple, mostly static, service dependency graphs that operate on pre-aggregated data that offer little 
+            value and utility in debugging at a detailed level, resulting in systems that can only be grouped as monitoring solutions rather than observability solutions.
+            
+            To further research in this field, this project will attempt to explore alternative and, ideally, improved ways of consuming and presenting the data from instrumented
             applications. Two ideas were planned to be explored and, if possible, implemented as proof of concepts:
 
             \begin{itemize}
-                \item Advancements in Service Topology/Dependency graphs
+                \item Advancements in Service Topology graphs
                 \item Editor Debugger integration                
             \end{itemize}
 
             % TODO:
             The viability and findings of both explored options will be discussed, with performance benchmarks where relevant being presented to highlight the feasibility of different
-            approaches 
+            approaches under potential real-world constraints and limitations.
 
         \section{Project Summary}
-            This project builds upon the concepts of distributed tracing, exploring ways to provide novel and high-value derivable ways of visualizing and presenting distributed tracing
-            data to developers. Modern standards, tools and integrations will be utilized to test the viability of less common and unexplored visualisations of distributed tracing data.
+            This project builds upon the concepts of distributed tracing, exploring ways to provide novel and high-value derivable ways of visualising and presenting distributed tracing
+            data to developers. Modern standards, tools and integrations will be utilized to test the viability of less common and unexplored visualisations of distributed tracing data
+            as well as expanding on current approaches.
 
             In Chapter 2, the history of distributed tracing will be introduced, while also covering some common vocabulary relevant to the topic and where they originated. It will also
             cover some of the standards that this project builds around. In Chapter 3, the project architecture design choices will be discussed and how they impacted the project, ranging
-            from the frontend frameworks chosen to the backend API and supporting services that power the various implementations. Finally, the different visualisations will be evaluated
-            on the value the provide as well as the feasibility of utilizing them in real-world scenarios. Chapters 5 and 6 will draw the writeup to a conclusion, detailing the closing
-            thoughts and putting forward ideas for future work on the ideas explored in this project.
+            from the frontend frameworks chosen to the backend API and supporting services that power the various implementations, as well as covering the implementation details of the various
+            components that resulted from the work done. Finally, the different visualisations will be evaluated on the value the provide as well as the feasibility of utilizing them in real-world
+            scenarios. Chapters 5 and 6 will draw the writeup to a conclusion, detailing the closing thoughts and putting forward ideas for future work on the ideas explored in this project.
 
     \chapter{Background}
-        \section{History}
+        \small{In this chapter we will briefly cover the history of distributed tracing, the major tools and specifications that lay the foundation of what distributed tracing is today,
+        as well as upcoming standards that aim to modernise and solve the short-comings of what came before. This will be followed by a summary of some commonly adopted visualisations
+        of distributed tracing data as well as the work that will be carried out in furthering research into visualising tracing data.}
+
+        \section{History \& Future}
             \subsection{Dapper}
                 Released in April 2010, Google published a paper describing the design decisions behind an in-house implementation 
                 of distributed tracing, named Dapper. It is commonly believed that this paper describes the common ancestor to 
@@ -215,8 +223,9 @@
 
                 \begin{figure}[htb!]
                     \centering
-                    \includegraphics[scale=1]{dappertrace.png}
-                    \caption{The relationships between traces in a trace tree.}
+                    \includegraphics[scale=1.2]{dappertrace.png}
+                    \caption{The relationships between traces in a trace tree. Each span contains its span identifier as well as that of its parent. 
+                    The root span contains no parent span identifier, signifying that it is the root span.}
                     \label{fig:dappertrace}
                 \end{figure}
 
@@ -250,7 +259,7 @@
                     \copyrightbox[r]{
                         \includegraphics[scale=0.5]{opentracing.png}
                     }{\tiny{\textcopyright OpenTracing "OpenTracing Overview"}}
-                    \caption{Infographic visualizing the different components that make up the OpenTracing API interface and how they relate to different services
+                    \caption{Infographic visualising the different components that make up the OpenTracing API interface and how they relate to different services
                     and the network}
                     \label{fig:opentracing}
                 \end{figure}
@@ -259,7 +268,7 @@
                 different platforms may have different, vendor-specific options for operations such as access control, authorization etc, vendors provide different mechanisms
                 and attributes for creating instances of OpenTracing API \textit{tracers} implementations.
 
-                \medskip
+                \newpage
                 \begin{lstlisting}[caption=Example Golang snippet of instatiating a Datadog OpenTracing compatible tracer., language=Go, gobble=20]
                     package main
 
@@ -279,7 +288,6 @@
                     opentracing.SetGlobalTracer(t)
                 \end{lstlisting}
 
-                \newpage
                 \begin{lstlisting}[caption=Example Golang snippet of instatiating a Jaeger OpenTracing compatible tracer., language=Go, gobble=20]
                     package main
 
@@ -309,25 +317,108 @@
                 is still very sparse, due to the fact that it is still a very new specification set, while still being largely backwards compatible with both OpenTracing and 
                 OpenCensus, providing API bridges to maintain compatibility. 
 
-                The OpenTelemetry API improves upon OpenTracing by introducing a set specification for context propagating header keys used to identify specific values, created
-                as a W3C specification. In OpenTracing API implementations, different vendors would use different keys to denote values such as the trace ID etc in, for example, 
-                HTTP headers. This would break the context chain if different codebases used different vendor implementations in a service dependency graph. By demoting vendor
-                libraries to providing simple \textit{exporters} that define how distributed tracing data is exported to backend systems rather than having them provide
-                tracer implementations like the way it was done with the OpenTracing API, the OpenTelemetry project achieves a better level of interoperability between codebases, 
-                where the OpenTelemetry \textit{collector} can act as the common sink for the different services, becoming the source of truth regarding the eventual backend system
-                to which the distributed tracing data will be exported to.
+                The OpenTelemetry API improves upon OpenTracing by introducing a set specification for context propagating, defining the header keys used to identify specific values 
+                relevant to propagating span context through process boundaries, created as a W3C specification. In OpenTracing API implementations, different vendors would use different 
+                keys to denote values such as the trace ID etc in, for example, HTTP headers. This would break the context chain if different codebases used different vendor implementations
+                in a service dependency graph. By demoting vendor libraries to providing simple \textit{exporters} that define how distributed tracing data is exported to backend systems
+                rather than having them provide tracer implementations like the way it was done with the OpenTracing API, and introducing a vendor-agnostic \textit{collector} implementation that 
+                will become the single service that defines how distributed tracing data and metrics are received, processed and exported, the OpenTelemetry project achieves a better level of 
+                interoperability between codebases, removing the need to operate and maintain multiple agents for various distributed tracing data formats, exporters and metrics backends.
 
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
-                        \includegraphics[scale=0.5]{opentelemetry-exporter.png}
+                        \includegraphics[scale=0.48]{opentelemetry-exporter.png}
                     }{\tiny{\textcopyright{LightStep "OpenTelemetry 101: What is an Exporter?"}}}
                     \caption{A high level overview of a typical OpenTelemetry setup, with services hooking into the OpenTelemetry SDK to output telemetry to
                     OpenTelemetry Collectors, which themselves forward data to the standalone Collector sink, which is configured to send metrics to a \textit{Prometheus}
                     server and distributed tracing data to the LightStep API.}
                     \label{fig:otexporter}
                 \end{figure}
+
+        \section{Visualisations of Distributed Traces}
+            All this telemetry data would be of little use if it wasn't consumed in some manner. As distributed tracing has only become a more
+            prominent topic in the industry in the last half decade, the set of visualisations that exist and are commonly employed is still rather
+            small in number. In this section, we will discuss some of the most common forms of visualisations, leading up to the methods explored 
+            in this project and how they differ or build upon previous efforts.
+        
+            \subsection{Flame Graph/Gantt Chart}
+                By far the most commonly adopted visualisation is a style of graph closely modeled after the \textit{flame graph}\cite{lightsteptrace}
+                \cite{datadogtrace} style, closely resembling Figure~\ref{fig:dappertrace}. It also goes under various other names, 
+                examples ranging from \textit{gantt chart}\cite{yuritrace} to \textit{waterfall view}\cite{honeycombtrace}. An example of 
+                such can be seen in Figure~\ref{fig:jaeger}, which shows a screenshot of the Jaeger distributed tracing platform user interface. 
                 
+                Each entry in the graph corresponds to a span in the overall trace tree. They can be expanded to display the logs and tags associated with a 
+                given span. The value that can be derived from this visualisation has resulted in large adoption of the flame graph style in distributed 
+                tracing providers and platforms, leading many to consider it the de-facto visualisation option for tracing data.
+
+                This form has existed since Dapper, with the visualisation being present in the Dapper user interface. While being the most widespread visualisation
+                form for distributed tracing, being able to provide a low-level view into the form of an individual trace, it has started to gather criticism for being
+                too low-level, especially earlier in the debugging process. This is largely said to be down to two reasons: 1) to make a trace useful, a user of a distributed
+                tracing service must first know what they are looking, knowing what trace they need to look at and 2) if starting from a single trace, a user needs to be able to work
+                upwards and deal with the data set in aggregate, finding metadata that is common across all events that correlate with certain problematic system behaviour. This has
+                sparked a shift in how trace data is used, with services such as Honeycomb.io providing forms of trace aggregation to assist in users being able to find what is 
+                correlated for a given issue across multiple traces\cite{traceaggregate}.
+        
+                \bigskip
+                \begin{figure}[htb!]
+                    \centering
+                    \includegraphics[scale=0.4]{jaeger}
+                    \caption{Example of the visualisation of tracing data in Uber's Distributed Tracing platform, Jaeger\cite{jaeger}, providing
+                    a flame graph/gantt chart visualisation of a single trace. Each horizontal bar represents a single span while each colour denotes
+                    a different service, with three services being displayed.}
+                    \label{fig:jaeger}
+                \end{figure}
+    
+            \newpage
+            \subsection{Service Topology}
+                This was the first alternative explored as part of the final year project. It has become more widespread in its adoption amongst 
+                different vendors with varying levels of sophistication\cite{risingstacktopo}\cite{kialitopo}. Most commonly, a force-directed 
+                graph is employed for its aesthetically pleasing properties however dominance drawing styles are also prominently used.
+        
+                A basic service topology graph can give a quick overview of the dependencies between different services in a distributed
+                system. For developers and administrators to derive tangible value from such a visualisation outside of a pretty picture, the graph
+                needs to provide useful consumable data that can aid in the debugging and monitoring of the behaviour of distributed systems in production
+                scenarios. Coupled with an overview of metrics for each node and edge in the graph, such as error rates or response times,
+                they have proven to be a valuable monitoring tool.
+                
+                To bring such visualisations beyond monitoring and into the realm of observability, there is a need for a more dynamic and granular 
+                system, not operating on pre-aggregated metrics. The ability to generate views based on arbitrary attributes would allow for users 
+                of the system to create more germane and focused graphs based on their needs, such as grouping by high cardinality fields like end-user IP address, 
+                error rates, response times and any other field associated with the events consumable by the system\cite{doingitwrongtopo}. The viability and 
+                value of creating such a system will be explored, discussing the features that would be expected of such a visualisation, what operations on the
+                data it would support to present users with dynamic and powerful data representations with the addition of being able to replay individual traces 
+                instead of being presented an aggregated view. The visualisation ideas explored in the \textbf{Design \& Implementation} chapter took inspiration from
+                the Massachusetts Bay Transit Authority (MBTA) data visualisation project\cite{mbta} and Cindy Sridharan's section on service topology maps in her blog 
+                post titled \textit{Distributed Tracing - we've been doing it wrong}\cite{doingitwrongtopo}, which lay the foundations for the discussions on 
+                expanding the ideas outlined in the blog post with respect to the current implementations of monitoring-oriented service topology maps.
+    
+            \subsection{In-Editor Debugger Integration}
+            \label{sec:debugger}
+                This is the second and final alternative explored as part of the project. The goal of this visualisation alternative was to
+                experiment with the attaching of runtime information to the tags of spans and processing said data in such a way that in-editor
+                debugging tools can consume it to step through code akin to attaching to a local process using the same debugging tools.
+        
+                Unlike traditional debuggers such as the \textit{GNU Project Debugger} (gdb)\cite{gdb}, where stepping through code requires complete
+                halting of program execution, using the runtime data attached to trace data allows for after-the-fact, non-blocking stepping
+                through code, at an expectedly lower resolution than what can be achieved through traditional, halting debuggers.
+        
+                A similar concept exists that works in a fundamentally different way and makes different trade-offs to achieve a similar goal.
+                Named \textit{Squash}, by \textit{Solo.io}, it more closely follows the style of traditional debuggers by providing a way of attaching
+                to processes in a microservices system in a blocking manner, allowing for stepping through code at the same level of granularity as 
+                traditional debuggers, along with the same features such as viewing and modifying local and global variables, setting breakpoints etc.
+                As such, it retains many of the same downsides, such as the inherent full-application halting when breakpoints are hit and when stepping
+                through code. Due to the nature of how it works, it is also a less generic solution, requiring custom support for platforms in which applications
+                may be deployed as well as custom support for individual debugger runtimes, such as gdb, delve\cite{delve} etc. At the time of writing, it supports Kubernetes, 
+                OpenShift and Istio in the application orchestration and service mesh group of services, and delve, \textit{Java Debug Wire Protocol} (jdwp)\cite{jdwp}, 
+                NodeJS\cite{nodejs} and \textit{Python Tools for Visual Studio debug server} (ptvsd)\cite{ptvsd} in the debugger runtimes group of tools.
+
+                This is in contrast to the concept explored in this project. It trades the granularity of being able to step through code on a line-by-line basis and
+                the more powerful variable inspection capabilities for a fully non-blocking and application-deployment agnostic method of being able to step through code
+                of the lifetime of a request at any stage after the fact. It does not rely on existing debugger runtimes or tools outside of the requirements for collecting,
+                storing and retrieving distributed tracing data and being able to query the application runtime or employing other heuristics for gathering runtime data
+                on the call stack information.
+                    
 
     \chapter{Design \& Implementation}
         \small{In this section, the different technical aspects will be covered, design decisions and components that played a role throughout the projects lifecycle.
@@ -423,7 +514,7 @@
                     resolving. The second query also requests the \texttt{spans} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
                     statement, while also resulting in potentially more data being sent down the wire.
 
-                    \medskip
+                    \newpage
                     \begin{lstlisting}[caption={GraphQL query to fetch a trace object and the span ID of each of its spans vs a query to fetch the trace object, its spans and every
                         tag of every span.}, label={lst:graphTrace}, language=GraphQL, gobble=24]
                         {
@@ -599,7 +690,7 @@
         
                 A basic service topology graph can give a quick overview of the dependencies between different services in a distributed system. However, it provides little value as an observability tool
                 for debugging production issues or finding internal services that are returning errors for certain customers. For developers and administrators to derive tangible value from such a 
-                visualization, there is a need for a more dynamic system. The ability to generate views based on arbitrary attributes would allow for users of the system to create more personalized and 
+                visualisation, there is a need for a more dynamic system. The ability to generate views based on arbitrary attributes would allow for users of the system to create more personalized and 
                 focused graphs based on their needs, such as grouping by high cardinality fields like end-user IP address, user identifiers as well as metrics such as error rates, response times 
                 etc\cite{doingitwrongtopo}.
 
@@ -619,7 +710,7 @@
                     \copyrightbox[r]{
                         \includegraphics[scale=0.14]{service-topo-risingstack.png}
                     }{\tiny\textcopyright{Gergely Nemeth on The RisingStack blog}}
-                    \caption{Example of the Microservices Topology visualization from RisingStack's monitoring platform, showing a basic topology overview with key metrics based on traces.}
+                    \caption{Example of the Microservices Topology visualisation from RisingStack's monitoring platform, showing a basic topology overview with key metrics based on traces.}
                     \label{fig:risingstacktopo}
                 \end{figure}
 
@@ -662,10 +753,11 @@
         \newpage          
         \section{Implementations}    
             \subsection{Backend API}
-                It was decided that Kotlin would be the language used for the backend after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
-                that utilized the Kotlin type-safe builder constructs\cite{dsl} to declare GraphQL schemas and Elasticsearch queries in Kotlin-based \textit{Domain Specific Language} (DSL).
+                For the backend, it was decided that it would be implemented in Kotlin after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
+                that utilized the Kotlin type-safe builder constructs\cite{dsl} to declare GraphQL schemas and Elasticsearch queries in Kotlin-based \textit{Domain Specific Language} (DSL). 
+                
 
-                \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=20]
+                \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=20, ]
                     val schema = KGraphQL.schema { 
                         query("findTrace") { 
                             resolver { traceID: String ->
@@ -705,8 +797,7 @@
                     }
                 \end{lstlisting}
             \subsection{Debug Adapter}
-                % baggage, tags, process tags
-            \subsection{Service Topology Frontend}
+                % baggage, tags, process tags, libraries
             
 
     \chapter{Evaluation}
@@ -724,6 +815,11 @@
 
     \begin{thebibliography}{69}
         \addcontentsline{toc}{chapter}{Bibliography}    
+
+        \bibitem{retrospective}
+        Charity Majors, \textit{Observability - A 3-Year Retrospective.} 
+        The New Stack, 6th Aug 2019 \\
+        \url{https://thenewstack.io/observability-a-3-year-retrospective/}
 
         \bibitem{dapper}
         Benjamin H. Sigelman, Luiz André Barroso, Mike Burrows, Pat Stephenson, Manoj Plakal, Donald Beaver, Saul Jaspan, Chandan Shanbhag, \\
@@ -747,7 +843,7 @@
         \url{https://opentelemetry.io/}
 
         \bibitem{udptagsize}
-        YurzShkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
+        Yuri Shkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
         31st May, 2018 \\
         \url{https://github.com/jaegertracing/jaeger-client-go/pull/316#issuecomment-393386461}
 
@@ -761,13 +857,82 @@
         Medium, 2nd July 2019 \\
         \url{https://medium.com/@copyconstruct/distributed-tracing-weve-been-doing-it-wrong-39fc92a857df}
 
-        \bibitem{mbta}
-        Mike Barry, Brian Card, \textit{Visualizing MBTA Data.}
-        10th June 2014 \\
-        \url{https://mbtaviz.github.io/}
-
         \bibitem{dsl}
         JetBrains \textit{Type-Safe Builders} \\
         \url{https://kotlinlang.org/docs/reference/type-safe-builders.html}
+
+        \bibitem{lightsteptrace}
+        \textit{View Traces documentation}
+        Lightstep \\ 
+        \url{https://docs.lightstep.com/docs/view-traces}
+
+        \bibitem{datadogtrace}
+        Brad Menezes, \textit{Datadog + OpenTracing: Embracing the open standard for APM.} \\
+        DataDog, 6th December 2017 \\
+        \url{https://www.datadoghq.com/blog/opentracing-datadog-cncf/}
+
+        \bibitem{yuritrace}
+        Yuri Shkuro, \textit{Mastering Distributed Tracing.} \\
+        Packt, February 2019 \\
+        \url{https://www.packtpub.com/eu/networking-and-servers/mastering-distributed-tracing}
+
+        \bibitem{honeycombtrace}
+        \textit{Explore trace data documentation.} \\
+        Honeycomb.io \\
+        \url{https://docs.honeycomb.io/working-with-your-data/tracing/explore-trace-data/#using-the-waterfall-view}
+
+        \bibitem{jaeger}
+        Yuri Shkuro, \textit{Jaeger, a Distributed Tracing Platform.}
+        Uber, April 2016 \\
+        \url{https://www.jaegertracing.io/}
+
+        \bibitem{jaegerscatter}
+        \textit{Jaeger Scatter Plot Graph configuration.} \\
+        \url{https://www.jaegertracing.io/docs/1.17/frontend-ui/#configuration-options}
+
+        \bibitem{newrelicscatter}
+        \textit{New Relic Scatter Plot example.} \\
+        \url{https://docs.newrelic.com/docs/apm/distributed-tracing/ui-data/understand-use-distributed-tracing-data#}
+
+        \bibitem{kialiscatter}
+        \textit{Kiali Scatter Plot view.} \\
+        \url{https://kiali.io/documentation/distributed-tracing/#_tracing_view}
+
+        \bibitem{risingstacktopo}
+        Gergely Nemeth, \textit{RisingStack Service Topology Graph.} \\
+        Rising Stack, 5th May 2016 \\
+        \url{https://blog.risingstack.com/distributed-transaction-tracing-microservices-monitoring/#microservicestopology}
+
+        \bibitem{kialitopo}
+        \textit{Kiali Service Mesh based Topology Graph.} \\
+        \url{https://kiali.io/documentation/features/#_graph}
+
+        \bibitem{gdb}
+        Richard Stallman, \textit{GDB: The GNU Project Debugger.} \\
+        Free Software Foundation, 1986 \\
+        \url{https://www.gnu.org/software/gdb/}
+
+        \bibitem{jdwp}
+        Oracle, \textit{Java Debug Wire Protocol} \\
+        \url{https://docs.oracle.com/javase/7/docs/technotes/guides/jpda/jdwp-spec.html}
+
+        \bibitem{nodejs}
+        OpenJS Foundation, \textit{NodeJS V8 Inspector Debugger} \\
+        \url{https://nodejs.org/api/debugger.html}
+
+        \bibitem{ptvsd}
+        Microsoft Corporation, \textit{Python Tools for Visual Studio debug server} \\
+        \url{https://github.com/microsoft/ptvsd}
+
+        \bibitem{delve}
+        Derek Parker, \textit{Delve - A Debugger for the Go Programming Language} \\
+        3rd May 2014 \\
+        \url{https://github.com/go-delve/delve}
+
+        \bibitem{traceaggregate}
+        Charity Majors, \textit{The need for read-time trace aggregation} \\
+        25th June, 2018 \\
+        \url{https://twitter.com/mipsytipsy/status/1011331790663872512}
+
     \end{thebibliography}
 \end{document}

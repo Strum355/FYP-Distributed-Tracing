@@ -27,7 +27,7 @@ import com.google.gson.Gson
 import org.slf4j.LoggerFactory
 import com.apurebase.kgraphql.KGraphQL
 import xyz.noahsc.topology.data.*
-import xyz.noahsc.topology.repository.ElasticsearchRepository
+import xyz.noahsc.topology.repository.*
 import com.google.gson.*
 
 @UseExperimental(KtorExperimentalAPI::class)
@@ -37,9 +37,9 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    val esRepo = ElasticsearchRepository()
+    val traceDataRepository = TraceDataRepositoryFactory.create()
     
-    environment.monitor.subscribe(ApplicationStopped) { esRepo.client.close() }
+    environment.monitor.subscribe(ApplicationStopped) { traceDataRepository.close() }
     install(DefaultHeaders)
     install(CallLogging)
     install(ContentNegotiation) {
@@ -56,7 +56,7 @@ fun Application.module() {
 
         query("findTrace") { 
             resolver { traceID: String ->
-                esRepo.getTraceByID(traceID)
+                traceDataRepository.getTraceByID(traceID)
             }.withArgs { 
                 arg<String> { name = "traceID"}
             }
@@ -67,10 +67,9 @@ fun Application.module() {
                 resolver { span: Span ->
                     StackTrace.fromSpan(span)
                 }
-             }
-             property<List<LogPoint>?>("logs") {
-                 resolver { span: Span, eventType: String? ->
-                    println(eventType)
+            }
+            property<List<LogPoint>?>("logs") {
+                resolver { span: Span, eventType: String? ->
                     if(eventType == null) {
                         return@resolver span.logs
                     }
@@ -79,8 +78,8 @@ fun Application.module() {
                             fieldEl: LogPointField -> fieldEl.key == "event" && fieldEl.value == eventType 
                         } 
                     }
-                 }
-             }
+                }
+            }
         }
     }
 

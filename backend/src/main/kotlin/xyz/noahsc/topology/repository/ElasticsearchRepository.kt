@@ -15,14 +15,14 @@ import org.apache.http.HttpHost
 import org.apache.http.HttpException
 import io.ktor.http.HttpStatusCode
 
-class ElasticsearchRepository {
+class ElasticsearchRepository : TraceDataRepository {
     val lowLevel = RestClient.builder(HttpHost("elasticsearch", 9200))
     public val client: RestHighLevelClient = RestHighLevelClient(lowLevel)
 
-    fun getTraceByID(traceID: String): Trace {
-        val query = bool {
-            must {
-                term { "traceID" to traceID }
+    override fun getTraceByID(traceID: String): Trace {
+        val query = term { 
+            "traceID" {
+                value = traceID
             }
         }
 
@@ -36,5 +36,9 @@ class ElasticsearchRepository {
         }
 
         return Trace.fromSearchHits(traceID, resp.hits.hits)
+    }
+
+    override fun close() {
+        client.close()
     }
 }

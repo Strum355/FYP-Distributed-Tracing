@@ -2,9 +2,7 @@ package tracestep
 
 import (
 	"reflect"
-	"regexp"
 	"runtime/debug"
-	"strings"
 	"unsafe"
 
 	"os"
@@ -13,8 +11,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-var scubber1 = regexp.MustCompile(`\(((?:0x[a-f0-9]+, )*0x[a-f0-9]+)?\)\n`)
-var scrubber2 = regexp.MustCompile(` \+0x[0-9a-f]+`)
 var buildInfo *debug.BuildInfo
 var newlineByte = []byte("\n")[0]
 
@@ -66,9 +62,6 @@ func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.Star
 	stackBytes := stack[offset:]
 	bh := (*reflect.SliceHeader)(unsafe.Pointer(&stackBytes))
 	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
-	stackString = scubber1.ReplaceAllString(stackString, "\n")
-	stackString = scrubber2.ReplaceAllString(stackString, "")
-	stackString = strings.ReplaceAll(stackString, exPath+"/", "")
 
 	span.SetTag("_tracestep_pkg", buildInfo.Main.Path)
 	span.SetTag("_tracestep_execpath", exPath)

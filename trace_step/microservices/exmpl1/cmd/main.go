@@ -21,6 +21,21 @@ const (
 	serviceName = "example1"
 )
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	span := opentracing.StartSpan("start-req")
+	span.SetBaggageItem(jaeger.TraceBaggageHeaderPrefix+"gw_user_id", r.Header.Get("user_id"))
+	span.SetBaggageItem(jaeger.TraceBaggageHeaderPrefix+"gw_session_id", r.Header.Get("session_id"))
+	span.SetTag("request_id", uuid.New().String())
+	defer span.Finish()
+
+	time.Sleep(time.Millisecond * 200)
+
+	Init(span.Context())
+
+	time.Sleep(time.Second * 2)
+	log.Println("done...")
+}
+
 func main() {
 	tracer, closer := jaeger.NewTracer(serviceName, jaeger.NewConstSampler(true), jaeger.NewRemoteReporter(
 		transport.NewHTTPTransport("http://localhost:14268/api/traces?format=jaeger.thrift"),
@@ -29,22 +44,10 @@ func main() {
 	), jaeger.TracerOptions.MaxTagValueLength(stackLength))
 	defer closer.Close()
 
-	opentracing.SetGlobalTracer(tracestep.NewTracerWrapper(tracer))
+	opentracing.SetGlobalTracer(tracestep.NewTracerWrapperWithOffset(tracer, 1))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		span := opentracing.StartSpan("start-req", tracestep.WithCallstackOffset(1))
-		span.SetBaggageItem(jaeger.TraceBaggageHeaderPrefix+"gw_user_id", r.Header.Get("user_id"))
-		span.SetBaggageItem(jaeger.TraceBaggageHeaderPrefix+"gw_session_id", r.Header.Get("session_id"))
-		span.SetTag("request_id", uuid.New().String())
-		defer span.Finish()
+	http.HandleFunc("/", handler)
 
-		time.Sleep(time.Millisecond * 200)
-
-		Init(span.Context())
-
-		time.Sleep(time.Second * 5)
-		log.Println("done...")
-	})
 	go http.ListenAndServe(":8001", nil)
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)

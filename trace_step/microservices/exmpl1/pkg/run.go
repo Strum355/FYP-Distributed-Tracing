@@ -19,7 +19,14 @@ func Do(ctx opentracing.SpanContext) {
 	opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		span.LogFields(otlog.String("event", "response"), otlog.Error(err))
+		return
+	}
+	defer resp.Body.Close()
+
 	span.LogFields(otlog.String("event", "response"), otlog.String("message", "got response from example2"))
 	log.Printf("%v %v", resp, err)
+
 	time.Sleep(time.Second * 1)
 }

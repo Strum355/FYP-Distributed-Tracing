@@ -26,6 +26,15 @@ dependencies {
     compile("ch.qos.logback:logback-classic:1.2.3")
     compile("org.apache.logging.log4j:log4j-core:2.12.1")
     compile("com.apurebase:kgraphql:0.10.2")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+		events("passed", "skipped", "failed")
+	}
 }
 
 tasks.withType<KotlinCompile>().configureEach {

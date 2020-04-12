@@ -182,7 +182,6 @@ export class DebugSession extends LoggingDebugSession {
                 serviceName
                 stacktrace {
                   stackFrames {
-                    packageName
                     filename
                     line
                   }

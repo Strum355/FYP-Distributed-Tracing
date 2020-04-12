@@ -13,6 +13,7 @@ import (
 
 var buildInfo *debug.BuildInfo
 var newlineByte = []byte("\n")[0]
+var globalOffset int
 
 func init() {
 	buildInfo, _ = debug.ReadBuildInfo()
@@ -34,8 +35,13 @@ func NewTracerWrapper(tracer opentracing.Tracer) opentracing.Tracer {
 	return &tracerWrapper{tracer}
 }
 
+func NewTracerWrapperWithOffset(tracer opentracing.Tracer, offset int) opentracing.Tracer {
+	globalOffset = offset
+	return &tracerWrapper{tracer}
+}
+
 func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	var offsetAmount int
+	var offsetAmount = globalOffset
 	for _, opt := range opts {
 		if offset, ok := opt.(offsetter); ok {
 			offsetAmount = int(offset)

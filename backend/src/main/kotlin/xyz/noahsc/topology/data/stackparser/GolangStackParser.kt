@@ -7,7 +7,9 @@ private val scrubber2 = Regex(""" \+0x[0-9a-f]+""")
 
 class GolangStackParser(var stacktrace: String, val execPath: String) {
     fun parse(): StackTrace {
-        stacktrace = scrubber2.replace(scrubber1.replace(stacktrace, "\n"), "").replace(execPath+"/", "")
+        stacktrace = scrubber1.replace(stacktrace, "\n")
+        stacktrace = scrubber2.replace(stacktrace, "")
+        stacktrace = stacktrace.replace(execPath+"/", "")
         val seq = stacktrace.trim().split("\n").chunked(2).map {
             val (_, fileLine) = it
             val (path, line) = parseFileInfo(fileLine)

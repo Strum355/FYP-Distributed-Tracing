@@ -10,6 +10,7 @@ export class TraceWrapper extends opentracing.Tracer {
     install()
     this.tracer = tracer
     this.stackOffset = stackOffset
+    Error.stackTraceLimit = Infinity
   }
 
   startSpan(name: string, options: opentracing.SpanOptions = {}): opentracing.Span {

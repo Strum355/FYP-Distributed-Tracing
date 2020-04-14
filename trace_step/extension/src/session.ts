@@ -38,14 +38,8 @@ export class DebugAdapter extends LoggingDebugSession {
     });
   }
 
-  protected breakpointLocationsRequest(response: DebugProtocol.BreakpointLocationsResponse, args: DebugProtocol.BreakpointLocationsArguments, request?: DebugProtocol.BreakpointLocationsRequest) {
-    response.body.breakpoints = [
-      {line: this.runtime.line(), column: 10}
-    ]
-    this.sendResponse(response)
-  }
-
   protected threadsRequest(response: DebugProtocol.ThreadsResponse) {
+    console.log(`[DEBUGGER] threads request`)
     response.body = {
       threads: [
         new Thread(DebugAdapter.THREAD_ID, "ebic")
@@ -104,7 +98,7 @@ export class DebugAdapter extends LoggingDebugSession {
   }
 
   protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
-
+    console.log(`[DEBUGGER] stacktrace request: ${JSON.stringify(args)}`)
 		const startFrame = typeof args.startFrame === 'number' ? args.startFrame : 0;
 		const maxLevels = typeof args.levels === 'number' ? args.levels : 1000;
 		const endFrame = startFrame + maxLevels;

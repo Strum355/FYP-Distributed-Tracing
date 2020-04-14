@@ -13,37 +13,23 @@ export class Runtime extends EventEmitter {
   private spanIdxStackMapping: number[] = []
   // where in the stacks we're at
   public stackIdx: number = -1
-  // current files source split on newline
-  private sourceLines: string[] = []
-  // current line we're on 
-  private currentLine: number = 0
   // the trace we're operating on
   private trace?: Trace
-  // index of the current span
-  private spanIdx: number = -1
-  // main path of the (entry?) service
-  private basePath = ''
   // mapping of service name to main path
   private mapping: Map<string, string> = new Map()
   // holds all baggage KV from all spans
   private baggageKV: Tag[] = []
-
-  constructor() {
-    super()
-  }
 
   public async start(trace: Trace) {
     this.trace = trace
     
     this.trace.spans = this.trace.spans.sort((a, b) => a.startTime < b.startTime ? -1 : 1)
 
-    this.basePath = await this.getMappingPath(trace.spans[0].serviceName)
-
     this.trace.spans = this.trace.spans.map(s => {
       s.stacktrace.stackFrames = s.stacktrace.stackFrames.reverse()
       return s
     })
-    console.log(`[RUNTIME] started ${this.basePath}`)
+    console.log(`[RUNTIME] started runtime`)
     console.log(`[RUNTIME] GraphQL Response: ${JSON.stringify(this.trace, null, 4)}`)
     
     this.collectBaggageKV()
@@ -84,20 +70,24 @@ export class Runtime extends EventEmitter {
     return mapping
   }
 
+  private getSpanIdx(): number {
+    return this.stackIdx === -1 ? -1 : this.spanIdxStackMapping[this.stackIdx]
+  }
+
   public getSpanTags(): Tag[] | undefined {
-    return this.trace?.spans[this.spanIdx].tags.filter(t => !t.key.startsWith('_tracestep'))
+    return this.trace?.spans[this.getSpanIdx()].tags.filter(t => !t.key.startsWith('_tracestep'))
   }
 
   public getProcessTags(): Tag[] | undefined {
-    return this.trace?.spans[this.spanIdx].processTags
+    return this.trace?.spans[this.getSpanIdx()].processTags
   }
   
   public getCurrentOperationName(): string | undefined {
-    return this.trace?.spans[this.spanIdx].operationName
+    return this.trace?.spans[this.getSpanIdx()].operationName
   }
 
   public getCurrentServiceName(): string | undefined {
-    return this.trace?.spans[this.spanIdx].serviceName
+    return this.trace?.spans[this.getSpanIdx()].serviceName
   }
 
   public getBaggageTags(): Tag[] | undefined {
@@ -105,13 +95,13 @@ export class Runtime extends EventEmitter {
   }
 
   private async loadNextSpan() {
-    if(this.spanIdx + 1 == this.trace!!.spans.length) {
-      this.sendEvent('stopOnStep')
+    if(this.getSpanIdx() + 1 == this.trace!!.spans.length) {
+      this.sendStopOnStepEvent()
       vscode.window.showInformationMessage('Reached final span of trace')
       return false
     }
 
-    const nextSpanIdx = this.spanIdx + 1
+    const nextSpanIdx = this.getSpanIdx() + 1
     const span = this.trace!!.spans[nextSpanIdx]
     const newFramesCount = span.stacktrace.stackFrames.length
     for(let frame of span.stacktrace.stackFrames) {
@@ -124,6 +114,20 @@ export class Runtime extends EventEmitter {
     return true
   }
   
+  /**
+   * Resolves the path of a file on the users machine based on stack frame 
+   * information. If the package name is null and the path is absolute, the 
+   * path is returned unchanged (not the best but works locally (^: ).
+   * If the package name is not null and the path is absolute, the path
+   * must be further resolved based on the language by filePathResolver.
+   * If the package name is null and the path is not absolute, the
+   * mapping path is prefixed with the filepath to give the path in the
+   * project folder. 
+   * 
+   * @param mappingPath the path of the project root folder
+   * @param stack the current stack frame the path is associated with
+   * @param spanIndex the index of the span this stack frame is associated with
+   */
   private async getPathFromStackFrame(mappingPath: string, stack: StackFrame, spanIndex: number): Promise<string> {
     if(stack.packageName != null && stack.filename.startsWith('/')) {
       return await this.filePathResolver(stack.filename, spanIndex)
@@ -138,6 +142,14 @@ export class Runtime extends EventEmitter {
     return localPath
   }
 
+  /**
+   * Resolves the path of a file on the users local machine depending on the programming
+   * language the span associated with this filepath is. It may prompt the user for additional
+   * information, such as for the GOPATH when the language is Go
+   * 
+   * @param filepath the path of the unresolved file
+   * @param spanIndex the index of the span to get what language we are resolving for
+   */
   private async filePathResolver(filepath: string, spanIndex: number): Promise<string> {
     const lang = this.trace!!.spans[spanIndex].tags.filter(t => t.key === "_tracestep_lang")[0].value
 
@@ -156,9 +168,8 @@ export class Runtime extends EventEmitter {
   }
 
   private loadSource(file: string, idx: number=this.stackIdx) {
-    if(this.sourceFileStack[idx] !== file || this.sourceLines.length === 0) {
-      this.sourceFileStack[idx] = file
-      this.sourceLines = readFileSync(this.sourceFileStack[idx]).toString().split('\n')
+    if(this.sourceFileStack[idx] !== file || idx === 0) {
+      readFileSync(this.sourceFileStack[idx]).toString()
     }
   }
 
@@ -168,33 +179,25 @@ export class Runtime extends EventEmitter {
         await this.loadNextSpan()
       }
       this.stackIdx++
-      if(this.spanIdxStackMapping[this.stackIdx] !== this.spanIdxStackMapping[this.stackIdx-1]) {
-        this.spanIdx++
-      }
       this.loadSource(this.sourceFileStack[this.stackIdx])
-      this.currentLine = this.framesStack[this.stackIdx].line
-      this.fireEventsForLine()
+      this.sendStopOnStepEvent()
     } else {
       if(this.stackIdx === 0) {
-        this.fireEventsForLine()
+        this.sendStopOnStepEvent()
         return false
       }
       this.stackIdx--
-      if(this.spanIdxStackMapping[this.stackIdx] !== this.spanIdxStackMapping[this.stackIdx+1]) {
-        this.spanIdx--
-      }
       this.loadSource(this.sourceFileStack[this.stackIdx])
-      this.currentLine = this.framesStack[this.stackIdx].line
-      this.fireEventsForLine()
+      this.sendStopOnStepEvent()
     }
     return true
   }
 
   public line(): number {
-    return this.currentLine
+    return this.framesStack[this.stackIdx].line
   }
 
-  private fireEventsForLine() {
+  private sendStopOnStepEvent() {
     this.sendEvent('stopOnStep')
   }
 

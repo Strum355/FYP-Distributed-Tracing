@@ -9,6 +9,8 @@ export class Runtime extends EventEmitter {
   // may contain duplicates if more than one stack frame per file
   public sourceFileStack: string[] = []
   public framesStack: StackFrame[] = []
+  // keeps track of the span associated with a stack index
+  private spanIdxStackMapping: number[] = []
   // where in the stacks we're at
   public stackIdx: number = -1
   // current files source split on newline
@@ -89,6 +91,14 @@ export class Runtime extends EventEmitter {
   public getProcessTags(): Tag[] | undefined {
     return this.trace?.spans[this.spanIdx].processTags
   }
+  
+  public getCurrentOperationName(): string | undefined {
+    return this.trace?.spans[this.spanIdx].operationName
+  }
+
+  public getCurrentServiceName(): string | undefined {
+    return this.trace?.spans[this.spanIdx].serviceName
+  }
 
   public getBaggageTags(): Tag[] | undefined {
     return this.baggageKV
@@ -101,19 +111,24 @@ export class Runtime extends EventEmitter {
       return false
     }
 
-    this.spanIdx++
-    const span = this.trace!!.spans[this.spanIdx]
+    const nextSpanIdx = this.spanIdx + 1
+    const span = this.trace!!.spans[nextSpanIdx]
     const newFramesCount = span.stacktrace.stackFrames.length
     for(let frame of span.stacktrace.stackFrames) {
       // TODO: trim common prefix/substr?
-      this.sourceFileStack.push(this.getPathFromStackFrame(await this.getMappingPath(span.serviceName), frame))
+      this.sourceFileStack.push(await this.getPathFromStackFrame(await this.getMappingPath(span.serviceName), frame, nextSpanIdx))
       this.framesStack.push(frame)
+      this.spanIdxStackMapping.push(nextSpanIdx)
     }
 
     return true
   }
   
-  private getPathFromStackFrame(mappingPath: string, stack: StackFrame): string {
+  private async getPathFromStackFrame(mappingPath: string, stack: StackFrame, spanIndex: number): Promise<string> {
+    if(stack.packageName != null && stack.filename.startsWith('/')) {
+      return await this.filePathResolver(stack.filename, spanIndex)
+    }
+    
     // this is a UNIX Only house!
     if(stack.filename.startsWith('/')) {
       return stack.filename
@@ -123,6 +138,23 @@ export class Runtime extends EventEmitter {
     return localPath
   }
 
+  private async filePathResolver(filepath: string, spanIndex: number): Promise<string> {
+    const lang = this.trace!!.spans[spanIndex].tags.filter(t => t.key === "_tracestep_lang")[0].value
+
+    // only need to prepend GOPATH
+    if(lang === "go") {
+      let gopath = vscode.workspace.getConfiguration('tracestep').get('gopath') as string | null | undefined
+      if(gopath == null) {
+        gopath = await vscode.window.showInputBox({
+          prompt: 'Please input value of GOPATH.'
+        })
+        await vscode.workspace.getConfiguration('tracestep').update('gopath', gopath)
+      }
+      return gopath+filepath
+    }
+    return filepath
+  }
+
   private loadSource(file: string, idx: number=this.stackIdx) {
     if(this.sourceFileStack[idx] !== file || this.sourceLines.length === 0) {
       this.sourceFileStack[idx] = file
@@ -130,13 +162,15 @@ export class Runtime extends EventEmitter {
     }
   }
 
-  // TODO: figure out when to do this.spanIdx--
   public async step(reverse: boolean): Promise<boolean> {
     if(!reverse) {
       if(this.stackIdx === this.sourceFileStack.length-1) {
         await this.loadNextSpan()
       }
       this.stackIdx++
+      if(this.spanIdxStackMapping[this.stackIdx] !== this.spanIdxStackMapping[this.stackIdx-1]) {
+        this.spanIdx++
+      }
       this.loadSource(this.sourceFileStack[this.stackIdx])
       this.currentLine = this.framesStack[this.stackIdx].line
       this.fireEventsForLine()
@@ -146,6 +180,9 @@ export class Runtime extends EventEmitter {
         return false
       }
       this.stackIdx--
+      if(this.spanIdxStackMapping[this.stackIdx] !== this.spanIdxStackMapping[this.stackIdx+1]) {
+        this.spanIdx--
+      }
       this.loadSource(this.sourceFileStack[this.stackIdx])
       this.currentLine = this.framesStack[this.stackIdx].line
       this.fireEventsForLine()

@@ -2,10 +2,10 @@ import ApolloClient from 'apollo-boost'
 import gql from 'graphql-tag'
 import { basename } from 'path'
 import * as vscode from 'vscode'
-import { Breakpoint, BreakpointEvent, Handles, InitializedEvent, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
+import { Handles, InitializedEvent, LoggingDebugSession, Scope, Source, StackFrame, StoppedEvent, Thread } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Runtime } from './runtime'
-import { TraceResponse } from "./types"
+import { Tag, TraceResponse } from "./types"
 const { Subject } = require('await-notify')
 
 interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
@@ -13,7 +13,7 @@ interface launchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   traceID: string
 }
 
-export class DebugSession extends LoggingDebugSession {
+export class DebugAdapter extends LoggingDebugSession {
   private static THREAD_ID = 1
   private static args: launchRequestArguments
 
@@ -32,43 +32,10 @@ export class DebugSession extends LoggingDebugSession {
 
     this.runtime = new Runtime()
 
-    this.runtime.on('stopOnEntry', () => {
-      console.log('[EVENT] stopOnEntry')
-      this.sendEvent(new StoppedEvent('entry', DebugSession.THREAD_ID))
-    })
 		this.runtime.on('stopOnStep', () => {
       console.log('[EVENT] stopOnStep')
-			this.sendEvent(new StoppedEvent('step', DebugSession.THREAD_ID));
+			this.sendEvent(new StoppedEvent('step', DebugAdapter.THREAD_ID));
     });
-		this.runtime.on('stopOnBreakpoint', () => {
-			console.log('[EVENT] stopOnBreakpoint')
-			this.sendEvent(new StoppedEvent('breakpoint', DebugSession.THREAD_ID));
-		});
-		this.runtime.on('stopOnDataBreakpoint', () => {
-			console.log('[EVENT] stopOnDataBreakpoint')
-			this.sendEvent(new StoppedEvent('data breakpoint', DebugSession.THREAD_ID));
-		});
-		this.runtime.on('stopOnException', () => {
-			console.log('[EVENT] stopOnException')
-			this.sendEvent(new StoppedEvent('exception', DebugSession.THREAD_ID));
-		});
-    this.runtime.on('output', (text, filePath, line, column) => {
-      console.log('[EVENT] output')
-      const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`)
-      e.body.source = this.createSource(filePath)
-      e.body.line = this.convertDebuggerLineToClient(line)
-      e.body.line = this.convertDebuggerColumnToClient(column)
-      this.sendEvent(e)
-    })
-
-    this.runtime.on('break', () => {
-      console.log(`[DEBUGGER] got break event`)
-      this.sendEvent(new BreakpointEvent('new', new Breakpoint(true, 26, 10, new Source('main.go', this.runtime.sourceFileStack[this.runtime.stackIdx]))))
-    })
-    
-    this.runtime.on('end', () => {
-      this.sendEvent(new TerminatedEvent())
-    })
   }
 
   protected breakpointLocationsRequest(response: DebugProtocol.BreakpointLocationsResponse, args: DebugProtocol.BreakpointLocationsArguments, request?: DebugProtocol.BreakpointLocationsRequest) {
@@ -81,7 +48,7 @@ export class DebugSession extends LoggingDebugSession {
   protected threadsRequest(response: DebugProtocol.ThreadsResponse) {
     response.body = {
       threads: [
-        new Thread(DebugSession.THREAD_ID, "ebic")
+        new Thread(DebugAdapter.THREAD_ID, "ebic")
       ]
     }
     this.sendResponse(response)
@@ -112,15 +79,25 @@ export class DebugSession extends LoggingDebugSession {
 
   protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.VariablesRequest): void {
     console.log(`[DEBUGGER] variables request: ${JSON.stringify(args)}`)
+
     const ref = this.variableHandles.get(args.variablesReference)
-    console.log(`[DEBUGGER] ref ${ref}`)
+    
+    let tagSet: Tag[] = []
+    if(ref === "tags") {
+      tagSet = this.runtime.getSpanTags() || []
+    } else if(ref === "baggage") {
+      tagSet = this.runtime.getBaggageTags() || []
+    } else if(ref === "process") {
+      tagSet = this.runtime.getProcessTags() || []
+    }
+
     response.body = {
-      variables: (ref === "tags" ? this.runtime.getSpanTags() : (ref === "baggage" ? this.runtime.getBaggageTags() : this.runtime.getProcessTags()))?.map(t => ({
+      variables: tagSet.map(t => ({
         name: t.key,
         value: t.value,
         type: t.type,
         variablesReference: 0
-      })) || []
+      }))
     }
 
     this.sendResponse(response)
@@ -136,13 +113,14 @@ export class DebugSession extends LoggingDebugSession {
 
 		response.body = {
 			stackFrames: [
-        new StackFrame(0, "test",
+        new StackFrame(0, 
+          `${this.runtime.getCurrentServiceName()}: ${this.runtime.getCurrentOperationName()!!}`,
           new Source(
             basename(this.runtime.sourceFileStack[this.runtime.stackIdx]),
             this.convertDebuggerPathToClient(this.runtime.sourceFileStack[this.runtime.stackIdx]),
             undefined,
             undefined,
-            'sample-text')
+            undefined)
           , this.runtime.line()),
       ],
 			totalFrames: 1,
@@ -158,7 +136,7 @@ export class DebugSession extends LoggingDebugSession {
 
   protected async launchRequest(response: DebugProtocol.LaunchResponse, args: launchRequestArguments) {
     await this.configurationDone.wait(1000)
-    DebugSession.args = args
+    DebugAdapter.args = args
     console.log(`[DEBUGGER] launch args ${JSON.stringify(args)}`)
     const client = new ApolloClient({
       uri: args.backendUrl
@@ -180,8 +158,10 @@ export class DebugSession extends LoggingDebugSession {
                 spanID
                 startTime
                 serviceName
+                operationName
                 stacktrace {
                   stackFrames {
+                    packageName
                     filename
                     line
                   }
@@ -229,19 +209,17 @@ export class DebugSession extends LoggingDebugSession {
     this.sendResponse(response)
   }
 
-  protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.StepInRequest) {
+  protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.StepInRequest) {
+    await this.runtime.step(false)
     this.sendResponse(response)
   }
 
-  protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.StepOutRequest) {
+  protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.StepOutRequest) {
+    await this.runtime.step(false)
     this.sendResponse(response)
   }
 
   protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.PauseRequest): void {
     this.sendResponse(response)
-  }
-
-  private createSource(path: string): Source {
-    return new Source(basename(path), this.convertDebuggerPathToClient(path), undefined, undefined, 'banana')
   }
 }

@@ -1,19 +1,12 @@
 import * as Net from 'net'
 import * as vscode from 'vscode'
-import { DebugSession } from './session'
+import { DebugAdapter } from './session'
 
 export async function activate(context: vscode.ExtensionContext) {
-  context.subscriptions.push(vscode.commands.registerCommand('extension.tracestep.getTraceID', () => {
-		return vscode.window.showInputBox({
-      placeHolder: "Please enter the Trace ID",
-      prompt: "Please enter the Trace ID",
-    })
-  }))
-  
   const config = new ConfigProvider()
   context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('tracestep', config))
 
-  const factory = new AdapterFactory()
+  const factory = new AdapterDescriptorFactory()
   context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('tracestep', factory))
   context.subscriptions.push(factory)
 }
@@ -26,16 +19,16 @@ class ConfigProvider implements vscode.DebugConfigurationProvider {
   }
 }
 
-class AdapterFactory implements vscode.DebugAdapterDescriptorFactory {
+class AdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
   private server?: Net.Server
 
-  createDebugAdapterDescriptor(session: vscode.DebugSession, exec: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+  createDebugAdapterDescriptor(__: vscode.DebugSession, _: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
     if(!this.server) {
-      this.server = Net.createServer(s => {
-        const session = new DebugSession()
+      this.server = Net.createServer(socket => {
+        const session = new DebugAdapter()
         session.setRunAsServer(true)
         console.log('[DEBUGGER] Starting server')
-        session.start(s, s)
+        session.start(socket, socket)
       }).listen(0)
     }
     return new vscode.DebugAdapterServer((this.server.address() as Net.AddressInfo).port)

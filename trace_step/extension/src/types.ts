@@ -8,6 +8,7 @@ export type Span = {
   spanID: string
   parentSpanID?: string
   serviceName: string
+  operationName: string
   startTime: number
   tags: Tag[]
   processTags: Tag[]
@@ -20,6 +21,7 @@ export type StackTrace = {
 }
 
 export type StackFrame = {
+  packageName?: string
   filename: string
   line: number
 }

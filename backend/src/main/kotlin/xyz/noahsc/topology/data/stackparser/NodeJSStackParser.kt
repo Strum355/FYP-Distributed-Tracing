@@ -13,7 +13,7 @@ class NodeJSStackParser(var stacktrace: String, val execPath: String) {
             val (path, line) = fileInfo.split(":")
             val strippedPath = path.removePrefix(execPath+"/")
             val lineInt = line.toInt()
-            StackFrame(strippedPath, lineInt)
+            StackFrame(null, strippedPath, lineInt)
         }
         return StackTrace(seq)
     }

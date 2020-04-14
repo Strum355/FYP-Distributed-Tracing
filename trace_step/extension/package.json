@@ -20,8 +20,13 @@
       "properties": {
         "tracestep.mappings": {
           "type": "object",
-          "description": "",
+          "description": "A mapping of service names to their root path on the local machine.",
           "default": {}
+        },
+        "tracestep.gopath" : {
+          "type": "string",
+          "description": "The value of the GOPATH variable used to resolve non-vendored Go dependencies.",
+          "default": null
         }
       }
     },
@@ -36,9 +41,6 @@
 				"label": "TraceStep",
 				"program": "./out/debugger.js",
 				"runtime": "node",
-				"variables": {
-					"AskForTraceID": "extension.tracestep.getTraceID"
-				},
 				"languages": [
 					"go"
 				],
@@ -67,11 +69,6 @@
 								"type": "string",
 								"description": "Path to base/root of the service",
 								"default": ""
-							},
-							"traceID": {
-								"type": "string",
-								"description": "Trace ID of the trace to replay",
-								"default": "${command:AskForTraceID}"
 							}
 						}
 					}

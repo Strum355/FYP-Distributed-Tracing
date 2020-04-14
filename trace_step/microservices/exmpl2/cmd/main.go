@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi"
+
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	tracestep "github.com/Strum355/FYP-2020_Distributed-Tracing/trace_step/golang"
@@ -56,8 +58,11 @@ func main() {
 
 	opentracing.SetGlobalTracer(tracestep.NewTracerWrapperWithOffset(tracer, 1))
 
-	http.HandleFunc("/", handler)
-	go http.ListenAndServe(":8002", nil)
+	r := chi.NewRouter()
+	r.Get("/", handler)
+
+	go http.ListenAndServe(":8002", r)
+
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc

@@ -5,15 +5,15 @@ import (
 	"runtime/debug"
 	"unsafe"
 
-	"os"
-	"path/filepath"
-
 	"github.com/opentracing/opentracing-go"
 )
 
 var buildInfo *debug.BuildInfo
 var newlineByte = []byte("\n")[0]
 var globalOffset int
+
+var GoModulePath string
+var GoPath string
 
 func init() {
 	buildInfo, _ = debug.ReadBuildInfo()
@@ -37,7 +37,7 @@ func NewTracerWrapper(tracer opentracing.Tracer) opentracing.Tracer {
 
 func NewTracerWrapperWithOffset(tracer opentracing.Tracer, offset int) opentracing.Tracer {
 	globalOffset = offset
-	return &tracerWrapper{tracer}
+	return NewTracerWrapper(tracer)
 }
 
 func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
@@ -62,15 +62,13 @@ func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.Star
 		}
 	}
 
-	ex, _ := os.Executable()
-	exPath := filepath.Dir(ex)
-
 	stackBytes := stack[offset:]
 	bh := (*reflect.SliceHeader)(unsafe.Pointer(&stackBytes))
 	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
 
+	span.SetTag("_tracestep_gopath", GoPath)
 	span.SetTag("_tracestep_pkg", buildInfo.Main.Path)
-	span.SetTag("_tracestep_execpath", exPath)
+	span.SetTag("_tracestep_execpath", GoModulePath)
 	span.SetTag("_tracestep_stack", stackString)
 	span.SetTag("_tracestep_lang", "go")
 

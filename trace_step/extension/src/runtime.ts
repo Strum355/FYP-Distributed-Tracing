@@ -4,6 +4,7 @@ import { join } from 'path'
 import * as vscode from 'vscode'
 import { StackFrame, Tag, Trace } from './types'
 
+// TODO: clicking next sometimes doubled on the same frame
 export class Runtime extends EventEmitter {
   // a stack of source file paths to step forward and back
   // may contain duplicates if more than one stack frame per file
@@ -65,7 +66,9 @@ export class Runtime extends EventEmitter {
       ignoreFocusOut: true,
     }))!! : mappingConf!!
 
-    await vscode.workspace.getConfiguration('tracestep.mappings').update(service, mapping)
+    const fullMapping = vscode.workspace.getConfiguration('tracestep').get('mappings') as {[key: string]: string}
+    fullMapping[service] = mapping
+    await vscode.workspace.getConfiguration('tracestep').update('mappings', fullMapping, vscode.ConfigurationTarget.Global)
 
     this.mapping.set(service, mapping)
 
@@ -161,7 +164,7 @@ export class Runtime extends EventEmitter {
         gopath = await vscode.window.showInputBox({
           prompt: 'Please input value of GOPATH.'
         })
-        await vscode.workspace.getConfiguration('tracestep').update('gopath', gopath)
+        await vscode.workspace.getConfiguration('tracestep').update('gopath', gopath, vscode.ConfigurationTarget.Global)
       }
       return gopath+filepath
     }

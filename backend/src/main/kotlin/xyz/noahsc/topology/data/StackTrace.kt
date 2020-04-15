@@ -18,4 +18,4 @@ data class StackTrace(val stackFrames: List<StackFrame>) {
     }
 }
 
-data class StackFrame(val packageName: String?, val filename: String, val line: Int)
+data class StackFrame(val packageName: String?, val filename: String, val line: Int, val shouldResolve: Boolean)

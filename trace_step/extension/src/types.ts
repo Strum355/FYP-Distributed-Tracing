@@ -24,6 +24,7 @@ export type StackFrame = {
   packageName?: string
   filename: string
   line: number
+  shouldResolve: boolean
 }
 
 export type Tag = {

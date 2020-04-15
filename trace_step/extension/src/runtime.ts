@@ -155,17 +155,17 @@ export class Runtime extends EventEmitter {
    * @param stack the current stack frame the path is associated with
    * @param spanIndex the index of the span this stack frame is associated with
    */
-  private async getPathFromStackFrame(mappingPath: string, stack: StackFrame, spanIndex: number): Promise<string> {
-    if(stack.packageName != null && stack.filename.startsWith('/')) {
-      return await this.filePathResolver(stack.filename, spanIndex)
+  private async getPathFromStackFrame(mappingPath: string, frame: StackFrame, spanIndex: number): Promise<string> {
+    if(frame.shouldResolve) {
+      return await this.filePathResolver(frame.filename, spanIndex)
     }
     
     // this is a UNIX Only house!
-    if(stack.filename.startsWith('/')) {
-      return stack.filename
+    if(frame.filename.startsWith('/')) {
+      return frame.filename
     }
 
-    const localPath = join(mappingPath, stack.filename)
+    const localPath = join(mappingPath, frame.filename)
     return localPath
   }
 

@@ -149,6 +149,7 @@ export class DebugAdapter extends LoggingDebugSession {
                     packageName
                     filename
                     line
+                    shouldResolve
                   }
                 }
                 tags {

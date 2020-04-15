@@ -15,19 +15,26 @@ class GolangStackParser(var stacktrace: String, val execPath: String, val gopath
             val (packageFunc, fileLine) = it
             val (path, line) = parseFileInfo(fileLine) 
             // if this is a non vendored dep
-            var pkg: String? = null
-            if (path.startsWith("/pkg/mod")) {
-                pkg = parsePackageLine(packageFunc)
-            }
-            StackFrame(pkg, path, line)
+            val shouldResolve = when(path.startsWith("/pkg/mod")) {
+                true -> true
+                false -> shouldResolve(packageFunc, path)
+            } 
+            val pkg = parsePackageLine(packageFunc)
+            StackFrame(pkg, path, line, shouldResolve)
         }
         return StackTrace(seq)
+    }
+
+    private fun shouldResolve(packageStr: String, path: String): Boolean {
+        if (!path.startsWith("/")) return false
+        val packageFuncSplit = packageStr.split(".")
+        return !packageFuncSplit.first().contains("/")
     }
 
     private fun parsePackageLine(packageStr: String): String? {
         val packageFuncSplit = packageStr.split(".")
         if (packageFuncSplit.first() == "main") {
-            return null
+            return "main"
         }
 
         if (packageFuncSplit.first().contains("/")) {

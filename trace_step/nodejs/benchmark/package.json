@@ -1,0 +1,16 @@
+{
+  "name": "benchmark",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "bench": "tsc || node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "benny": "^3.6.14",
+    "opentracing": "^0.14.4",
+    "tracestep": "file:.."
+  }
+}

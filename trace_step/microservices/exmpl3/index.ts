@@ -5,7 +5,7 @@ import * as tracestep from 'tracestep'
 import * as uuid from 'uuid'
 
 const traceConfig: jaeger.TracingConfig = {
-  serviceName: 'example4',
+  serviceName: 'example3',
   reporter: {
     collectorEndpoint: 'http://localhost:14268/api/traces?format=jaeger.thrift'
   }
@@ -31,6 +31,14 @@ app.get('/', async (req, res) => {
   span.setTag('request_id', uuid.v4())
   
   await new Promise(r => setTimeout(r, 1000))
+  
+  /* let headers = {}
+  tracer.inject(span.context(), opentracing.FORMAT_HTTP_HEADERS, headers)
+
+  await fetch('http://localhost:8082', {
+    headers: headers,
+  }) */
+
   
   span.finish()
   

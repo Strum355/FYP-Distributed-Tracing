@@ -1,8 +1,7 @@
 import ApolloClient from 'apollo-boost'
 import gql from 'graphql-tag'
-import { basename } from 'path'
 import * as vscode from 'vscode'
-import { Handles, InitializedEvent, LoggingDebugSession, Scope, Source, StackFrame, StoppedEvent, Thread } from 'vscode-debugadapter'
+import { Handles, InitializedEvent, LoggingDebugSession, Scope, StoppedEvent, Thread } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Runtime } from './runtime'
 import { Tag, TraceResponse } from "./types"
@@ -103,21 +102,13 @@ export class DebugAdapter extends LoggingDebugSession {
 		const maxLevels = typeof args.levels === 'number' ? args.levels : 1000;
 		const endFrame = startFrame + maxLevels;
 
-		//const stk = this.runtime.stack(startFrame, endFrame);
-
+    const stack = this.runtime.getStack((s: string): string => { 
+      return this.convertDebuggerPathToClient(s)
+    }).reverse()
+    
 		response.body = {
-			stackFrames: [
-        new StackFrame(0, 
-          `${this.runtime.getCurrentServiceName()}: ${this.runtime.getCurrentOperationName()!!}`,
-          new Source(
-            basename(this.runtime.sourceFileStack[this.runtime.stackIdx]),
-            this.convertDebuggerPathToClient(this.runtime.sourceFileStack[this.runtime.stackIdx]),
-            undefined,
-            undefined,
-            undefined)
-          , this.runtime.line()),
-      ],
-			totalFrames: 1,
+			stackFrames: stack,
+			totalFrames: stack.length,
 		};
 		this.sendResponse(response);
 	}

@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events'
 import { existsSync } from 'fs'
-import { join } from 'path'
+import { basename, join } from 'path'
 import * as vscode from 'vscode'
+import * as vscodedebug from 'vscode-debugadapter'
 import { StackFrame, Tag, Trace } from './types'
 
 // TODO: clicking next sometimes doubled on the same frame
@@ -86,17 +87,39 @@ export class Runtime extends EventEmitter {
   public getProcessTags(): Tag[] | undefined {
     return this.trace?.spans[this.getSpanIdx()].processTags
   }
-  
-  public getCurrentOperationName(): string | undefined {
-    return this.trace?.spans[this.getSpanIdx()].operationName
+
+  public getOperationName(idx: number = this.getSpanIdx()): string | undefined {
+    return this.trace?.spans[idx].operationName
   }
 
-  public getCurrentServiceName(): string | undefined {
-    return this.trace?.spans[this.getSpanIdx()].serviceName
+  public getServiceName(idx: number = this.getSpanIdx()): string | undefined {
+    return this.trace?.spans[idx].serviceName
   }
 
   public getBaggageTags(): Tag[] | undefined {
     return this.baggageKV
+  }
+
+  public getStack(fn: (debuggerPath: string) => string): vscodedebug.StackFrame[] {
+    const stack: vscodedebug.StackFrame[] = []
+    for(let i = 0; i < this.stackIdx+1; i++) {
+      let stackframeName = `${this.getServiceName(this.spanIdxStackMapping[i])}: ${this.getOperationName(this.spanIdxStackMapping[i])}`
+      if(this.framesStack[i].packageName != null) {
+        stackframeName = `${stackframeName} [${this.framesStack[i].packageName}]`
+      }
+      stack.push(
+        new vscodedebug.StackFrame(0,
+          stackframeName,
+          new vscodedebug.Source(
+            basename(this.sourceFileStack[i]), 
+            fn(this.sourceFileStack[i]), 
+            undefined, undefined, undefined,
+          ),
+          this.framesStack[i].line
+        )
+      )
+    }
+    return stack
   }
 
   private async loadNextSpan(): Promise<boolean> {

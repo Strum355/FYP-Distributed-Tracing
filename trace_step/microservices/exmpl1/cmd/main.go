@@ -22,10 +22,12 @@ const (
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	span := opentracing.StartSpan("start-req")
-	span.SetBaggageItem(jaeger.TraceBaggageHeaderPrefix+"gw_user_id", r.Header.Get("user_id"))
-	span.SetBaggageItem(jaeger.TraceBaggageHeaderPrefix+"gw_session_id", r.Header.Get("session_id"))
-	span.SetTag("request_id", uuid.New().String())
+	span := opentracing.StartSpan("GET /handler")
+	span.SetBaggageItem("session.user-id", r.Header.Get("user_id"))
+	span.SetBaggageItem("session.session-id", r.Header.Get("session_id"))
+	span.SetTag("request.request-id", uuid.New().String())
+	span.SetTag("request.remote-ip", "10.12.4.50")
+	span.SetTag("request.content-length", 256)
 	defer span.Finish()
 
 	time.Sleep(time.Millisecond * 200)

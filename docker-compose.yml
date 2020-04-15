@@ -84,20 +84,6 @@ services:
     depends_on: 
       - traefik
       - elasticsearch
-  
-  frontend:
-    build: 
-      context: ./service_topology
-    container_name: fyp-frontend
-    volumes: 
-      - ./service_topology/frontend:/app
-    labels: 
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`)"
-      - "traefik.http.services.frontend.loadbalancer.server.port=8080"    
-    depends_on:
-      - traefik
-      - backend
 
   traefik:
     image: traefik:2.0.7

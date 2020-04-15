@@ -18,7 +18,7 @@ func Test_StartSpan(t *testing.T) {
 			Path: "test",
 		},
 	}
-	tracer := NewTracerWrapper(mocktracer.New())
+	tracer := NewTracerShim(mocktracer.New())
 	opentracing.SetGlobalTracer(tracer)
 	span := opentracing.StartSpan("sampletext", WithCallstackOffset(1))
 	defer span.Finish()
@@ -49,7 +49,7 @@ func BenchmarkStartSpanTraceStep(b *testing.B) {
 			Path: "test",
 		},
 	}
-	tracer := NewTracerWrapper(mocktracer.New())
+	tracer := NewTracerShim(mocktracer.New())
 	for i := 0; i < b.N; i++ {
 		span = tracer.StartSpan("banana", WithCallstackOffset(0))
 	}

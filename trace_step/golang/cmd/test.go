@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	tracer := tracestep.NewTracerWrapper(mocktracer.New())
+	tracer := tracestep.NewTracerShim(mocktracer.New())
 	tracer.StartSpan("test")
 }

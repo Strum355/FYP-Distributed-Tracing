@@ -46,7 +46,7 @@ func main() {
 	), jaeger.TracerOptions.MaxTagValueLength(stackLength))
 	defer closer.Close()
 
-	opentracing.SetGlobalTracer(tracestep.NewTracerWrapperWithOffset(tracer, 1))
+	opentracing.SetGlobalTracer(tracestep.NewTracerShimWithOffset(tracer, 1))
 
 	http.HandleFunc("/", handler)
 

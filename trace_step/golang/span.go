@@ -27,20 +27,20 @@ func WithCallstackOffset(num int) opentracing.StartSpanOption {
 	return offsetter(num)
 }
 
-type tracerWrapper struct {
+type tracerShim struct {
 	opentracing.Tracer
 }
 
-func NewTracerWrapper(tracer opentracing.Tracer) opentracing.Tracer {
-	return &tracerWrapper{tracer}
+func NewTracerShim(tracer opentracing.Tracer) opentracing.Tracer {
+	return &tracerShim{tracer}
 }
 
-func NewTracerWrapperWithOffset(tracer opentracing.Tracer, offset int) opentracing.Tracer {
+func NewTracerShimWithOffset(tracer opentracing.Tracer, offset int) opentracing.Tracer {
 	globalOffset = offset
-	return NewTracerWrapper(tracer)
+	return NewTracerShim(tracer)
 }
 
-func (t *tracerWrapper) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+func (t *tracerShim) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
 	var offsetAmount = globalOffset
 	for _, opt := range opts {
 		if offset, ok := opt.(offsetter); ok {

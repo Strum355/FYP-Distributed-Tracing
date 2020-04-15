@@ -1,7 +1,7 @@
 import * as opentracing from 'opentracing'
 import { install } from 'source-map-support'
 
-export class TraceWrapper extends opentracing.Tracer {
+export class TraceShim extends opentracing.Tracer {
   private tracer: opentracing.Tracer
   private stackOffset: number
 

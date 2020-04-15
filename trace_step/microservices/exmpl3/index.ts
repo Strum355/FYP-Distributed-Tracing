@@ -12,7 +12,7 @@ const traceConfig: jaeger.TracingConfig = {
 }
 
 const traceOpts: jaeger.TracingOptions = {}
-const tracer = new tracestep.TraceWrapper(jaeger.initTracer(traceConfig, traceOpts), 0)
+const tracer = new tracestep.TraceShim(jaeger.initTracer(traceConfig, traceOpts), 0)
 opentracing.initGlobalTracer(tracer)
 
 const app = express()

@@ -194,22 +194,22 @@ export class DebugAdapter extends LoggingDebugSession {
   }
 
   protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
-    await this.runtime.step(false)
+    await this.runtime.stepForward()
     this.sendResponse(response)
   }
 
   protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments) {
-    await this.runtime.step(true)
+    await this.runtime.stepBack()
     this.sendResponse(response)
   }
 
   protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.StepInRequest) {
-    await this.runtime.step(false)
+    await this.runtime.stepForward()
     this.sendResponse(response)
   }
 
   protected async stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments, request?: DebugProtocol.StepOutRequest) {
-    await this.runtime.step(false)
+    await this.runtime.stepForward()
     this.sendResponse(response)
   }
 

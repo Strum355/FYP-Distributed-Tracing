@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import { readFileSync } from 'fs'
+import { existsSync } from 'fs'
 import { join } from 'path'
 import * as vscode from 'vscode'
 import { StackFrame, Tag, Trace } from './types'
@@ -35,7 +35,7 @@ export class Runtime extends EventEmitter {
     this.collectBaggageKV()
 
     await this.loadNextSpan()
-    this.step(false)
+    this.stepForward()
   }
 
   // Baggage KV are stored as a log point in the span they were created on.
@@ -64,6 +64,8 @@ export class Runtime extends EventEmitter {
       prompt: `Please enter absolute path to base of ${service}.`,
       ignoreFocusOut: true,
     }))!! : mappingConf!!
+
+    await vscode.workspace.getConfiguration('tracestep.mappings').update(service, mapping)
 
     this.mapping.set(service, mapping)
 
@@ -94,9 +96,8 @@ export class Runtime extends EventEmitter {
     return this.baggageKV
   }
 
-  private async loadNextSpan() {
+  private async loadNextSpan(): Promise<boolean> {
     if(this.getSpanIdx() + 1 == this.trace!!.spans.length) {
-      this.sendStopOnStepEvent()
       vscode.window.showInformationMessage('Reached final span of trace')
       return false
     }
@@ -167,30 +168,31 @@ export class Runtime extends EventEmitter {
     return filepath
   }
 
-  private loadSource(file: string, idx: number=this.stackIdx) {
-    if(this.sourceFileStack[idx] !== file || idx === 0) {
-      readFileSync(this.sourceFileStack[idx]).toString()
+  public async stepForward() {
+    if(this.stackIdx === this.sourceFileStack.length-1) {
+      const hitEnd = await this.loadNextSpan()
+      if(hitEnd) {
+        this.sendStopOnStepEvent()
+        return
+      }
     }
+    this.stackIdx++
+    this.popupOnFileNotExists()
+    this.sendStopOnStepEvent()
   }
 
-  public async step(reverse: boolean): Promise<boolean> {
-    if(!reverse) {
-      if(this.stackIdx === this.sourceFileStack.length-1) {
-        await this.loadNextSpan()
-      }
-      this.stackIdx++
-      this.loadSource(this.sourceFileStack[this.stackIdx])
+  public async stepBack() {
+    if(this.stackIdx === 0) {
       this.sendStopOnStepEvent()
-    } else {
-      if(this.stackIdx === 0) {
-        this.sendStopOnStepEvent()
-        return false
-      }
-      this.stackIdx--
-      this.loadSource(this.sourceFileStack[this.stackIdx])
-      this.sendStopOnStepEvent()
+      return
     }
-    return true
+    this.stackIdx--
+    this.popupOnFileNotExists()
+    this.sendStopOnStepEvent()
+  }
+
+  private popupOnFileNotExists() {
+    if(!existsSync(this.sourceFileStack[this.stackIdx])) vscode.window.showErrorMessage(`File ${this.sourceFileStack[this.stackIdx]} not found when stepping.`)
   }
 
   public line(): number {

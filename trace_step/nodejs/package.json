@@ -13,7 +13,9 @@
   "dependencies": {
     "@types/node": "^13.11.1",
     "@types/source-map-support": "^0.5.1",
+    "clarify": "^2.1.0",
     "opentracing": "^0.14.4",
-    "source-map-support": "^0.5.16"
+    "source-map-support": "^0.5.16",
+    "trace": "^3.1.1"
   }
 }

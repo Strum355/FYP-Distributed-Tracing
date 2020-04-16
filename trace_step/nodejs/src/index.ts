@@ -1,5 +1,8 @@
+import 'clarify'
 import * as opentracing from 'opentracing'
+import { dirname } from 'path'
 import { install } from 'source-map-support'
+import 'trace'
 
 export class TraceShim extends opentracing.Tracer {
   private tracer: opentracing.Tracer
@@ -20,7 +23,7 @@ export class TraceShim extends opentracing.Tracer {
     stack = stack.substring(stack.indexOf('\n') + 1 + this.stackOffset)
     span.setTag('_tracestep_stack', stack)
     span.setTag('_tracestep_lang', 'nodejs')
-    span.setTag('_tracestep_execpath', require('path').dirname(require.main.filename))
+    span.setTag('_tracestep_execpath', dirname(require.main.filename))
     return span
   }
 

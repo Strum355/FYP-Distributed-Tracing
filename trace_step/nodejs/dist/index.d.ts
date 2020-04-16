@@ -1,4 +1,6 @@
+import 'clarify';
 import * as opentracing from 'opentracing';
+import 'trace';
 export declare class TraceShim extends opentracing.Tracer {
     private tracer;
     private stackOffset;

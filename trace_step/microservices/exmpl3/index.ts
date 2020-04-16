@@ -29,8 +29,14 @@ app.get('/', async (req, res) => {
   })
 
   span.setTag('request_id', uuid.v4())
-  
-  await new Promise(r => setTimeout(r, 1000))
+
+  await new Promise(r => setTimeout(r, 300))
+
+  const span1 = tracer.startSpan('awaiting', {
+    childOf: span.context()
+  })
+
+  await new Promise(r => setTimeout(r, 100))
   
   /* let headers = {}
   tracer.inject(span.context(), opentracing.FORMAT_HTTP_HEADERS, headers)
@@ -39,7 +45,10 @@ app.get('/', async (req, res) => {
     headers: headers,
   }) */
 
-  
+  span1.finish()
+
+  await new Promise(r => setTimeout(r, 300))
+
   span.finish()
   
   res.send("ok epic time")

@@ -1,7 +1,6 @@
 package tracestep
 
 import (
-	"runtime/debug"
 	"testing"
 
 	"github.com/opentracing/opentracing-go"
@@ -13,11 +12,6 @@ var (
 )
 
 func Test_StartSpan(t *testing.T) {
-	buildInfo = &debug.BuildInfo{
-		Main: debug.Module{
-			Path: "test",
-		},
-	}
 	tracer := NewTracerShim(mocktracer.New())
 	opentracing.SetGlobalTracer(tracer)
 	span := opentracing.StartSpan("sampletext", WithCallstackOffset(1))
@@ -44,11 +38,6 @@ func banana(t *testing.T, span opentracing.Span) {
 }
 
 func BenchmarkStartSpanTraceStep(b *testing.B) {
-	buildInfo = &debug.BuildInfo{
-		Main: debug.Module{
-			Path: "test",
-		},
-	}
 	tracer := NewTracerShim(mocktracer.New())
 	for i := 0; i < b.N; i++ {
 		span = tracer.StartSpan("banana", WithCallstackOffset(0))
@@ -56,11 +45,6 @@ func BenchmarkStartSpanTraceStep(b *testing.B) {
 }
 
 func BenchmarkStartSpanBaseline(b *testing.B) {
-	buildInfo = &debug.BuildInfo{
-		Main: debug.Module{
-			Path: "test",
-		},
-	}
 	tracer := mocktracer.New()
 	for i := 0; i < b.N; i++ {
 		span = tracer.StartSpan("banana", WithCallstackOffset(0))

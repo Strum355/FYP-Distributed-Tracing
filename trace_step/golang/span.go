@@ -8,16 +8,11 @@ import (
 	"github.com/opentracing/opentracing-go"
 )
 
-var buildInfo *debug.BuildInfo
 var newlineByte = []byte("\n")[0]
 var globalOffset int
 
 var GoModulePath string
 var GoPath string
-
-func init() {
-	buildInfo, _ = debug.ReadBuildInfo()
-}
 
 type offsetter int
 
@@ -67,7 +62,6 @@ func (t *tracerShim) StartSpan(operationName string, opts ...opentracing.StartSp
 	stackString := *(*string)(unsafe.Pointer(&reflect.StringHeader{bh.Data, bh.Len}))
 
 	span.SetTag("_tracestep_gopath", GoPath)
-	span.SetTag("_tracestep_pkg", buildInfo.Main.Path)
 	span.SetTag("_tracestep_execpath", GoModulePath)
 	span.SetTag("_tracestep_stack", stackString)
 	span.SetTag("_tracestep_lang", "go")

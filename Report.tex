@@ -603,7 +603,7 @@
             \subsection{Debug Adapter}
                 For this part of the project, it was decided to develop the idea of integrating the telemetry from instrumented applications into the debugger API of Visual Studio Code.
                 Visual Studio Code was chosen as the editor for which the integration would be built due to its extensive extensibility and first class Debug Adapter Protocol support. 
-                Built in Typescript, a Javascript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
+                Built in TypeScript, a JavaScript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
                 and the editor to provide many of the same features one would expect from traditional debugger tools such as the GNU Project Debugger (GDB).
 
                 \subsubsection{Debug Adapter Protocol}
@@ -682,7 +682,8 @@
                     with the unchanged sections filtered out. 
 
                 \bigskip
-                \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects, unchanged fields and objects filtered.}, language=GraphQL, gobble=20, label={lst:stack}]
+                \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects. Unchanged fields and objects filtered. The \texttt{shouldReslolve} field indicates
+                    whether a file path requires additional resolving in the debugger runtime.}, language=GraphQL, gobble=20, label={lst:stack}]
                     type Span {
                         // ...
                         stacktrace: StackTrace
@@ -698,6 +699,7 @@
                         packageName: String
                         filename: String!
                         line: Int!
+                        shouldResolve: Boolean!
                     }
                 \end{lstlisting}
                 \bigskip
@@ -793,13 +795,13 @@
                 to step through code of the different codebases residing on the users machine that together make up a distributed system. The main implementation details such as interfacing with the backend
                 server outlined in Section~\ref{sec:backend}, how the data is consumed and presented to the user will be discussed in this section.
 
-                As both the Debug Adapter Protocol, Visual Studio Code and Typescript are all maintained by Microsoft, and given that Visual Studio Code is built on Typescript with comprehensive support for the language
-                in developing extensions for it, Typescript was the obvious choice to implement this project in. Microsoft provide a sample Github repository containing a mock debugger runtime, Visual Studio Code extension
+                As both the Debug Adapter Protocol, Visual Studio Code and TypeScript are all maintained by Microsoft, and given that Visual Studio Code is built on TypeScript with comprehensive support for the language
+                in developing extensions for it, TypeScript was the obvious choice to implement this project in. Microsoft provide a sample Github repository containing a mock debugger runtime, Visual Studio Code extension
                 and debug adapter. As it contains the necessary boilerplate code from which a fully-fledged debugger runtime and debug adapter can be made, it served as the base for this project.
 
                 The debugger is composed primarily of three parts: the extension that Visual Studio Code loads, the debug adapter that the extension initialises and informs Visual Studio Code about, and the debugger runtime
                 that consumes distributed tracing data from the GraphQL server and for which the debug adapter acts as a bridge so that Visual Studio Code can communicate with it. With reference to Figure~\ref{fig:vscodedebug},
-                the \textit{Debug Extension} is the metadata that defines the extension that Visual Studio Code consumes, which can be found in the \texttt{package.json} manifest file. This includes the entrypoint Javascript file 
+                the \textit{Debug Extension} is the metadata that defines the extension that Visual Studio Code consumes, which can be found in the \texttt{package.json} manifest file. This includes the entrypoint JavaScript file 
                 that starts the extension, what it contributes as an extension (in this case, a debugger) amongst other metadata. Following on from this, the \textit{Extension Code} includes the entrypoint defined in the 
                 aforementioned metadata, and handles the activation, deactivation and the registering of its capabilities through the \textit{Extension API}. One such capability that can be registered is a \textit{Debug Adapter 
                 Descriptor Factory}. From this factory, a debug adapter can be activated and the information required for Visual Studio Code to interact with the debug adapter, the \textit{Descriptor} part of the previous term, 
@@ -826,7 +828,7 @@
 
                 \newpage
                 \begin{spacing}{1.0}
-                    \begin{lstlisting}[label={lst:descriptor}, gobble=24, language=Typescript, caption={The method used to initialise the Debug Adapter and return the Debug Adapter Descriptor to Visual Studio Code.}]
+                    \begin{lstlisting}[label={lst:descriptor}, gobble=24, language=TypeScript, caption={The method used to initialise the Debug Adapter and return the Debug Adapter Descriptor to Visual Studio Code.}]
                         class AdapterDescriptorFactory implements DebugAdapterDescriptorFactory {
                             
                             createDebugAdapterDescriptor(
@@ -907,7 +909,7 @@
 
                 \begin{figure}[htb!]
                     \centering
-                    \includegraphics[scale=1.7]{vscodestack.png}
+                    \includegraphics[scale=1.6]{vscodestack.png}
                     \caption{The visualisation of stack frames in the Visual Studio Code debugger UI panel, displaying various information such as the service name, operation/span
                     name as well as source file information for each stack frame, displayed in a top-down manner.}
                     \label{fig:stacks}
@@ -922,7 +924,73 @@
                 % baggage, tags, process tags, libraries, 
 
             \subsection{OpenTracing Tracer Shims}
-                % go and node, python bad coz UDP, sourcemaps, https://golang.org/cmd/link/
+                As the debugger runtime and backend API server rely on runtime stacktrace information in order to step through stack frames for each span in a trace, the instrumented services need to be able
+                to collect that information as well as any other information required for operations such as dependency path resolution and transport it to the trace collector as part of the span tags.
+                To achieve this, a lightweight shim that implements the OpenTracing tracer API was implemented for every language supported. A number of languages were originally considered and then narrowed
+                down to a set that were found to be viably implemented. Originally considered were: NodeJS with which comes support for TypeScript, JavaScript, CoffeeScript and other languages that compile
+                down to JavaScript, Go, the JVM including Java and Kotlin, Python and Rust. This was narrowed down to NodeJS, Go and the JVM.
+
+                \subsubsection{NodeJS Tracer Shim}
+                    The NodeJS OpenTracing tracer shim implementation was made simple by the constructs made available by the NodeJS runtime to gather much of the required information easily. As each \texttt{Error} 
+                    instance has a stacktrace attached with it, gathering a stacktrace is as simple as referencing the \texttt{stack} attribute. By default however, the stacktrace is limited to ~10 entries. This is
+                    easily remediated, by setting the \texttt{stackTraceLimit} static attribute on the \texttt{Error} class to \texttt{Infinity}, ensuring the full stack trace possible.
+
+                    However, there were some scenarios in which the full stacktrace would not be captured. Due to how NodeJS handles asynchronous execution of functions\cite{asyncnostack}, there are scenarios in which
+                    the stacktrace context is lost. While there have been solutions released to try alleviate this issue, including natively in the NodeJS runtime\cite{asyncstack}, there still remains scenarios in which
+                    the stacktrace is substantially smaller with much context lost. The \textit{trace}\cite{longtrace} NodeJS package was discovered that showed good results in the sample NodeJS microservice codebase, and was
+                    integrated into the shim thereafter.
+
+                    Figure~\ref{fig:nodejsstack} illustrates an example of a NodeJS stacktrace as it is stored in the database. Of note is the absolute filepath on every line. As the filepath associated with a stack
+                    frame is vital, it is necessary to derive the paths relative to the path of the main module so that it can be resolved properly to the location of the file on the end user's machine. For this, the 
+                    shim queries the NodeJS runtime for the filepath of the entrypoint script and deriving the directory it is contained in via the following snippet: \texttt{require('path').dirname(require.main.filename)}.
+
+                    As JavaScript is increasingly not being used directly by developers, but rather through languages such as TypeScript, CoffeeScript, Elm and other programming languages that transpile to JavaScript,
+                    as well as the fact that JavaScript is commonly transformed and minified for more efficient browser delivery, the concept of \textit{source mapping} was created to map stacktrace information
+                    from the transformed sources to the original source code. While NodeJS supports displaying associated source mappings alongside the transformed source filepaths in stacktraces\cite{sourcemap},
+                    the \textit{source-map-support}\cite{sourcemapsupport} NodeJS package takes this further by replacing the transformed source filepaths with the original source mapping filepaths, "making every 
+                    compile-to-JS language more of a first-class citizen", making first-class citizens of languages that compile to JavaScript in the stacktraces simplifies the processing needed on the backend, 
+                    outlined in Section~\ref{sec:backend}.
+
+                    \begin{figure}[hbt!]
+                        \centering
+                        \includegraphics[scale=1.7]{nodejsstack.png}
+                        \caption{NodeJS stacktrace collected in a HTTP handler on processing an incoming request with the Express HTTP framework for JavaScript.}
+                        \label{fig:nodejsstack}
+                    \end{figure}
+
+                    In whole, the NodeJS shim attaches three tags to every span created through it: the stacktrace string to be parsed by the backend API server, the language/platform (namely "nodejs"), as well
+                    as the full directory path of the entrypoint of the application, as this is required to in the backend API server to trim the filepath prefixes to allow for resolving to the application
+                    root directory on the end user's machine. Next the Go tracer shim implementation will be discussed, along with the differences encountered compared to the NodeJS tracer shim.
+
+                \subsubsection{Go Tracer Shim}
+                    The Go tracer shim implementation came along with a wholly different set of problems to solve. As with NodeJS, capturing a stacktrace in Go is made trivial by the Go standard library. However,
+                    in a similar fashion, the stacktrace returned by the Go runtime does not go further than the point where a function was called as a goroutine\cite{goroutine}, the term used in Go to refer to a 
+                    form of green threads employed by the language to achieve concurrency. In contrast to NodeJS, this behaviour is consistent for all tested scenarios, which establishes confidence in the quality 
+                    of the returned stacktrace. Figure~\ref{fig:gostack} displays a stacktrace collected in Go, which will be described in more detail in Section~\ref{sec:goparser}. Of particular note, in the context
+                    of stacktraces collection in asynchronous contexts, are the final two lines of the stacktrace, where the indication is made that this stack frame is the beginning of a new goroutine ("\texttt{created
+                    by net/http.(*Server).Serve}"), with the function name, source code path and file line number of the function that created the goroutine outlined.
+
+                    \begin{figure}[hbt!]
+                        \centering
+                        \includegraphics[scale=0.4]{gostack.png}
+                        \caption{Go stacktrace collected after two functions calls from within a HTTP handler.}
+                        \label{fig:gostack}
+                    \end{figure}
+
+                    While in the NodeJS tracer shim, it was possible to query for the directory path of the project root directory, this proved to not be a portable solution for the Go implementation. The filepaths
+                    in the stacktrace are based off compile-time values, therefore using the runtime project root directory would yield a value that cannot be applied to the trimming the filepaths in the stacktrace. 
+                    After researching methods for retrieving the value of the compile-time project root directory, the most optimal solution that was found was to utilise compiler linker flags to set values at compile
+                    time\cite{golangldflag}. By invoking the compiler as follows, it is possible to set the value of the project root directory variable at compile time: '\texttt{go build -ldflags "-X 
+                    github.com/Strum355/tracestep/golang.GoModulePath="\$(pwd) cmd/*.go}'. \\The Go tracer shim adds one extra tag to each of its spans compared to the NodeJS tracer shim, a value to represent the 
+                    \texttt{GOPATH} environment variable at compile-time. Unlike in NodeJS, dependencies are commonly stored in a central directory in the filesystem, and as such to resolve them, said directory needs to
+                    be known to mark the relevant stack frames as requiring extra resolving, either via user input or by looking up a previously stored value for the value of \texttt{GOPATH} on the end user's machine,
+                    when consumed by the debug extension in Section~\ref{sec:impldebug}. All other processing is then handled by the backend API server for the debug extension to consumes, which will be discussed in the 
+                    following section.
+
+                
+                % TODO: GET IT DONE. The Python Jaeger client libraries did not support transporting spans over HTTP, with only UDP transport support. 
+                % TODO: GET JVM DONE TOO
+                % go and node, python bad coz UDP, https://golang.org/cmd/link/
 
             \subsection{Backend API}
             \label{sec:backend}
@@ -944,7 +1012,7 @@
                 and the \textit{"logs"} field already defined on the \textit{Span} type, with a custom resolver to optionally filter the data in the field before the data is serialized. Each custom field resolver takes
                 the parent object as the first parameter, upon which further operations are carried out. The stacktrace resolvers purpose is to transform the raw stacktrace stored in the span tag into a defined and common
                 format. It does this by reading both the stacktrace and the programming language that this span originated from and processes the stacktrace with the appropriate stacktrace parser, for which there is one
-                for every language supported. As two OpenTracing tracer shims were created, one for the Go programming language and one for NodeJS (for Javascript/Typescript), two stacktrace parsers needed to be implemented 
+                for every language supported. As two OpenTracing tracer shims were created, one for the Go programming language and one for NodeJS (for JavaScript/TypeScript), two stacktrace parsers needed to be implemented 
                 to parse the respective stacktraces into a common format.
 
                 \begin{spacing}{1.0}
@@ -976,6 +1044,7 @@
                 \end{spacing}
 
                 \subsubsection{NodeJS Stacktrace Parser}
+                \label{sec:nodeparser}
                     In Listing~\ref{lst:nodeparser}, the NodeJS stack parser is illustrated. A sample NodeJS stacktrace is provided in Figure~\ref{fig:nodejsstack} to illustrate the
                     format the parser deals with. A Regular Expression is used to extract the file path and line number for each line
                     in the stacktrace, which is in the format of \texttt{/file/path:line}. The final number in each line denotes the column in the file. This information is not 
@@ -988,10 +1057,10 @@
                     in the given stacktrace. For this reason, \texttt{null} is passed to the \textit{StackFrame} constructor as the first argument, which denotes the package name to aid in
                     dependency resolution and isolation, as it is not needed for the aforementioned reason.
 
-                    Additionally, from Figure~\ref{fig:nodejsstack}, it can be seen that there are three lines at the bottom of the stacktrace that the regular expression would not match, as the file
-                    paths do not start with a forward slash. As these are NodeJS internal files, the parser is setup to ignore such lines by returning \texttt{null} from the \texttt{mapNotNull} function,
-                    which excludes null values from the final list. They were considered not important enough to warrant being included, as implementing support for language internals is outside of the scope
-                    of this project where implementation is non-trivial.%, as resolving the path on the local filesystem 
+                    \hl{Earlier in development, before the \textit{clarify}{\cite{clarify}} NodeJS package had been discovered, stacktraces would contain a number of entries that were associated with NodeJS internal 
+                    runtime files. The parser was setup to ignore such lines by returning \texttt{null} from the \texttt{mapNotNull} function, which excludes null values from the final list. They were considered unimportant 
+                    enough to warrant not being included, as implementing support for language internals is outside of the scope of this project where implementation is non-trivial. As this was no longer an issue
+                    after discovery of the aforementioned package, the parser remained unchanged as there was no reason to change it.}
 
                     \begin{spacing}{1.0}
                         \begin{lstlisting}[language=Kotlin, gobble=28, label={lst:nodeparser}, caption={The NodeJS Stack parser class }]
@@ -1006,34 +1075,32 @@
                                         val (path, line) = fileInfo.split(":")
                                         val strippedPath = path.removePrefix(execPath+"/")
                                         val lineInt = line.toInt()
-                                        StackFrame(null, strippedPath, lineInt)
+                                        StackFrame(packageName, strippedPath, lineInt, false)
                                     }
                                     return StackTrace(seq)
                                 }
+                                
+                                private fun extractModule(filepath: String): String {
+                                    val pathWithoutFile = filepath.removeSuffix(File(filepath).name)
+                                    return when(pathWithoutFile.length) {
+                                        0 -> "main"
+                                        else -> pathWithoutFile
+                                    }
                             }
                         \end{lstlisting}
                     \end{spacing}
 
-                    \medskip
-                    \begin{figure}[hbt!]
-                        \centering
-                        \includegraphics[scale=1.6]{nodejsstack.png}
-                        \caption{NodeJS stacktrace collected in a HTTP handler on processing an incoming request with the Express HTTP framework for Javascript.}
-                        \label{fig:nodejsstack}
-                    \end{figure}
-                    
-
-                    As the NodeJS OpenTracing tracer shim initialises the \texttt{source-map-support}\cite{sourcemapsupport} library, stack frame lines in the stacktrace that have an 
+                    As the NodeJS OpenTracing tracer shim initialises the \texttt{source-map-support} library, stack frame lines in the stacktrace that have an 
                     accompanying line representing the source mapping are overwritten with the source mapping. This greatly simplifies the stacktrace parsing, as there is only one line
                     associated with each stack frame, with the source mapping being the definitive line where available.
                     % TODO: expand? 
 
                 \subsubsection{Go Stacktrace Parser}
-                    Following on from the NodeJS stack parser is the Go stack parser in Listing~\ref{lst:goparser} and a sample stacktrace in Figure~\ref{fig:gostack}. Parsing Go
-                    stacktraces is notably more involved than parsing NodeJS stacktraces. Each stack frame is represented by two lines in the stacktrace string: the first line contains
-                    the package name, function name and the function call argument addresses for each parameter of the function called as well as the address of the returned variable(s),
-                    while the second line contains the path of the file containing the function the stack frame represents at compile time, the line in the file and finally program counter
-                    information. 
+                \label{sec:goparser}
+                    Following on from the NodeJS stack parser is the Go stack parser in Listing~\ref{lst:goparser}. Parsing Go stacktraces is notably more involved than parsing NodeJS 
+                    stacktraces. Each stack frame is represented by two lines in the stacktrace string: the first line contains the package name, function name and the function call argument 
+                    addresses for each parameter of the function called as well as the address of the returned variable(s), while the second line contains the path of the file containing the 
+                    function the stack frame represents at compile time, the line in the file and finally program counter information. 
 
                     The parser initially removes unused data from the stacktrace string, removing the program counter information, function argument and return variable addresses. What remains
                     are the package names with function names and file paths with line numbers on alternating lines. The package names, file paths and line numbers are extracted from this, and
@@ -1041,7 +1108,7 @@
 
                     There are five main types of packages that need to be handled in Go: the main package which contains the entrypoint into the application, subpackages of the application,
                     internal packages that are part of the Go standard library, vendored dependencies and lastly non-vendored dependencies. For the main package, subpackages and vendored
-                    dependencies, the filepath handling mentioned in~\ref{sec:impldebug}, wherein source code filepaths that have the applications base path as a prefix, are resolved by prefixing
+                    dependencies, the filepath handling mentioned in Section~\ref{sec:impldebug}, wherein source code filepaths that have the applications base path as a prefix, are resolved by prefixing
                     them with the user-provided base path of the application's path on the users machine, and their package name is set to null. For non-vendored dependencies, the \texttt{GOPATH} 
                     value provided to the tracer shim at compile time is trimmed from the paths and the package name is parsed and set. Finally, for the Go internal package files, the package name
                     is parsed and the filepath is left untouched.
@@ -1053,15 +1120,15 @@
                     standard library, are in the format \texttt{domainname.tld/author/package/} with any number of subpackages, as the package name parser assumes a single period character in the name.
                     This was considered sufficient for the proof of concept, while implementing support for package names outside of this constraint was considered outside of the scope of the project.
                     % TODO: expand
-                    \bigskip
+                    \medskip
                     \begin{spacing}{1.0}
                         \begin{lstlisting}[language=Kotlin, gobble=28, label={lst:goparser}]
                             private val scrubber1 = Regex("""\(((?:0x[a-f0-9]+, )*0x[a-f0-9]+)?\)\n""")
                             private val scrubber2 = Regex(""" \+0x[0-9a-f]+""")
                             
                             class GolangStackParser(
-                                var stacktrace: String, 
-                                val execPath: String, 
+                                var stacktrace: String,
+                                val execPath: String,
                                 val gopath: String
                             ) {
                                 fun parse(): StackTrace {
@@ -1072,27 +1139,28 @@
                                     val seq = stacktrace.trim().split("\n").chunked(2).map {
                                         val (packageFunc, fileLine) = it
                                         val (path, line) = parseFileInfo(fileLine) 
-                                        // if this is a non vendored dep
-                                        var pkg: String? = null
-                                        if (path.startsWith("pkg/mod")) {
-                                            pkg = parsePackageLine(packageFunc)
-                                        }
-                                        StackFrame(pkg, path, line)
+                                        val shouldResolve = when(path.startsWith("/pkg/mod")) {
+                                            true -> true
+                                            false -> shouldResolve(packageFunc, path)
+                                        } 
+                                        val pkg = parsePackageLine(packageFunc)
+                                        StackFrame(pkg, path, line, shouldResolve)
                                     }
                                     return StackTrace(seq)
                                 }
                             
-                                private fun parsePackageLine(packageStr: String): String? {
+                                private fun shouldResolve(packageStr: String, path: String): Boolean {
+                                    if (!path.startsWith("/")) return false
                                     val packageFuncSplit = packageStr.split(".")
-                                    if (packageFuncSplit.first() == "main") {
-                                        return null
-                                    }
+                                    return !packageFuncSplit.first().contains("/")
+                                }
                             
-                                    if (packageFuncSplit.first().contains("/")) {
-                                        return packageFuncSplit.first()
-                                    }
-                            
-                                    return packageFuncSplit.take(2).joinToString(separator=".")
+                                private fun parsePackageLine(packageStr: String): String? {
+                                    val pkgFuncSplit = packageStr.split(".")
+                                    if (pkgFuncSplit.first() == "main") return "main"
+                                    if (pkgFuncSplit.first().contains("/")) return pkgFuncSplit.first()
+
+                                    return pkgFuncSplit.take(2).joinToString(separator=".")
                                 }
                             
                                 private fun parseFileInfo(fileInfo: String): Pair<String, Int> {
@@ -1102,13 +1170,6 @@
                             }
                         \end{lstlisting}
                     \end{spacing}
-
-                    \begin{figure}[hbt!]
-                        \centering
-                        \includegraphics[scale=0.45]{gostack.png}
-                        \caption{Go stacktrace collected after two functions calls from within a HTTP handler.}
-                        \label{fig:gostack}
-                    \end{figure}
                 
                 \subsubsection{Interfacing With Elasticsearch}
                     As the backend interfaces with an Elasticsearch database, there needs to be a way to build an Elasticsearch query that retrieves a specific trace for a given trace identifier. The Elasticsearch Query DSL
@@ -1116,7 +1177,7 @@
                     represents a trace for a given trace identifier, and how it is represented in the Elasticsearch Query DSL. The query builder DSL is provided by a Kotlin library by Mike Buhot, available at 
                     \url{https://github.com/mbuhot/eskotlin}, and the official Elasticsearch client is used to perform the queries against the database.
 
-                    \newpage
+                    \bigskip
                     \begin{spacing}{1.0}
                         \begin{lstlisting}[caption={Comparison between Elasticsearch query using Kotlin DSL and the query in its JSON representation, where $\langle$traceID$\rangle$ refers
                             to a variable storing the trace identifier.}, label={lst:eskotlin}, language=Kotlin, gobble=24]
@@ -1174,7 +1235,7 @@
         \addcontentsline{toc}{chapter}{Bibliography}    
 
         \bibitem{retrospective}
-        Charity Majors, \textit{Observability - A 3-Year Retrospective.} 
+        Charity Majors, \textit{Observability - A 3-Year Retrospective.} \\
         The New Stack, 6th Aug 2019 \\
         \url{https://thenewstack.io/observability-a-3-year-retrospective/}
 
@@ -1185,23 +1246,20 @@
         \url{https://research.google/pubs/pub36356/}
 
         \bibitem{mbta}
-        Mike Barry, Brian Card, \textit{Visualizing MBTA Data.}
-        10th June 2014 \\
-        \url{https://mbtaviz.github.io/}
+        Mike Barry, Brian Card, \textit{Visualizing MBTA Data.} \\
+        10th June 2014, \url{https://mbtaviz.github.io/}
 
         \bibitem{opentracing}
-        Benjamin H. Sigelman (co creator), \textit{The OpenTracing project.}
-        October 2015 \\
-        \url{https://opentracing.io/}
+        Benjamin H. Sigelman (co creator), \textit{The OpenTracing project.} \\
+        October 2015, \url{https://opentracing.io/}
 
         \bibitem{opentelemetry}
-        OpenTelemetry Authors, \textit{The OpenTelemetry Project.} 
-        19th April 2019 \\
-        \url{https://opentelemetry.io/}
+        OpenTelemetry Authors, \textit{The OpenTelemetry Project.} \\
+        19th April 2019, \url{https://opentelemetry.io/}
 
         \bibitem{udptagsize}
         Yuri Shkuro, \textit{Jaeger Span Tags and UDP packet sizes.}
-        31st May, 2018 \\
+        31st May 2018 \\
         \url{https://github.com/jaegertracing/jaeger-client-go/pull/316#issuecomment-393386461}
 
         \bibitem{dwarf}
@@ -1219,9 +1277,8 @@
         \url{https://kotlinlang.org/docs/reference/type-safe-builders.html}
 
         \bibitem{lightsteptrace}
-        \textit{View Traces documentation}
-        Lightstep \\ 
-        \url{https://docs.lightstep.com/docs/view-traces}
+        \textit{View Traces documentation} \\
+        Lightstep, \url{https://docs.lightstep.com/docs/view-traces}
 
         \bibitem{datadogtrace}
         Brad Menezes, \textit{Datadog + OpenTracing: Embracing the open standard for APM.} \\
@@ -1239,7 +1296,7 @@
         \url{https://docs.honeycomb.io/working-with-your-data/tracing/explore-trace-data/#using-the-waterfall-view}
 
         \bibitem{jaeger}
-        Yuri Shkuro, \textit{Jaeger, a Distributed Tracing Platform.}
+        Yuri Shkuro, \textit{Jaeger, a Distributed Tracing Platform.} \\
         Uber, April 2015 \\
         \url{https://www.jaegertracing.io/}
 
@@ -1252,7 +1309,7 @@
         \url{https://docs.newrelic.com/docs/apm/distributed-tracing/ui-data/understand-use-distributed-tracing-data#}
 
         \bibitem{kialiscatter}
-        \textit{Kiali Scatter Plot view.} \\
+        \textit{Kiali Scatter Plot View.} \\
         \url{https://kiali.io/documentation/distributed-tracing/#_tracing_view}
 
         \bibitem{risingstacktopo}
@@ -1283,28 +1340,68 @@
 
         \bibitem{delve}
         Derek Parker, \textit{Delve - A Debugger for the Go Programming Language} \\
-        3rd May 2014 \\
+        Github, 3rd May 2014 \\
         \url{https://github.com/go-delve/delve}
 
         \bibitem{traceaggregate}
         Charity Majors, \textit{The need for read-time trace aggregation} \\
-        25th June, 2018 \\
+        Twitter, 25th June 2018 \\
         \url{https://twitter.com/mipsytipsy/status/1011331790663872512}
 
         \bibitem{typeerasure}
         Joseph Kulandai, \textit{Type Erasure}
-        1st August, 2014 \\
+        1st August 2014 \\
         \url{https://javapapers.com/core-java/type-erasure/}
 
         \bibitem{sourcemapsupport}
         Evan Wallace, \textit{Node Source Map Support} \\
-        18th January, 2013 \\ 
+        Node Package Manager Repository, 18th January 2013 \\ 
         \url{https://www.npmjs.com/package/source-map-support}
 
         \bibitem{mockdebug}
-        Microsoft Corporation, \textit{Starter sample for developing debug adapters for VSCode.} \\
-        6th September, 2015 \\
+        Andre Weinand, \textit{Starter sample for developing debug adapters for VSCode.} \\
+        Microsoft Corporation, 6th September 2015 \\
         \url{https://github.com/microsoft/vscode-mock-debug}
+
+        \bibitem{clarify}
+        Andreas Madsen, \textit{Clarify - Remove nodecore related stack trace noise.} \\
+        Node Package Manager Repository, 14th September 2012 \\
+        \url{https://www.npmjs.com/package/clarify}
+        
+        \bibitem{longtrace}
+        Andreas Madsen, \textit{Trace - Creates super long stack traces.} \\
+        Node Package Manager Repository, 14th September 2012 \\
+        \url{https://www.npmjs.com/package/trace}
+        
+        \bibitem{asyncnostack}
+        Divyanshu, \textit{Why do I lose stack trace when using async-await in Node.js?} \\
+        StackOverflow, 14th March 2019 \\
+        \url{https://stackoverflow.com/questions/55162619/why-do-i-lose-stack-trace-when-using-async-await-in-node-js}
+
+        \bibitem{asyncstack}
+        Benedikt Meurer, \textit{Zero-cost async stack traces.} \\
+        Google V8 Team, 1st October 2018 \\
+        \url{https://docs.google.com/document/d/13Sy_kBIJGP0XT34V1CV3nkWya4TwYx9L3Yv45LdGB6Q/edit}
+
+        \bibitem{sourcemap}
+        Benjamin Code, \textit{Source maps in Node.js.} \\
+        Node.js Team, 25th February 2020 \\
+        \url{https://medium.com/@nodejs/source-maps-in-node-js-482872b56116}
+
+        \bibitem{golangstacklimit}
+        Eric Daniels, Ian Lance Taylor, Austin Clements, Russ Cox, \textit{Support tracking goroutine ancestor tracebacks.} \\
+        Golang Core Team, 16th October 2017 \\
+        \url{https://github.com/golang/go/issues/22289}
+        
+        \bibitem{goroutine}
+        Riteek Srivastav, \textit{A complete journey with Goroutines.} \\
+        Medium, 16th April 2018 \\
+        \url{https://medium.com/@riteeksrivastava/a-complete-journey-with-goroutines-8472630c7f5c}
+
+        \bibitem{golangldflag}
+        Filippo Valsorda, \textit{Setting Go variables from the outside.} \\
+        Cloudflare, 1st June 2015 \\
+        \url{https://blog.cloudflare.com/setting-go-variables-at-compile-time/}
 
     \end{thebibliography}
 \end{document}

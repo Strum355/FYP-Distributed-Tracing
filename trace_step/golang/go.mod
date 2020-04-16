@@ -1,4 +1,4 @@
-module github.com/Strum355/FYP-2020_Distributed-Tracing/trace_step/golang
+module github.com/Strum355/tracestep/golang
 
 go 1.13
 

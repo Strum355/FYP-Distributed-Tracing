@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	tracestep "github.com/Strum355/FYP-2020_Distributed-Tracing/trace_step/golang"
+	tracestep "github.com/Strum355/tracestep/golang"
 	"github.com/google/uuid"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"

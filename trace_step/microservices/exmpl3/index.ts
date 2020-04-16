@@ -1,5 +1,6 @@
 import express from 'express'
 import * as jaeger from 'jaeger-client'
+import fetch from 'node-fetch'
 import * as opentracing from 'opentracing'
 import * as tracestep from 'tracestep'
 import * as uuid from 'uuid'
@@ -38,12 +39,12 @@ app.get('/', async (req, res) => {
 
   await new Promise(r => setTimeout(r, 100))
   
-  /* let headers = {}
-  tracer.inject(span.context(), opentracing.FORMAT_HTTP_HEADERS, headers)
+  let headers = {}
+  tracer.inject(span1.context(), opentracing.FORMAT_HTTP_HEADERS, headers)
 
   await fetch('http://localhost:8082', {
     headers: headers,
-  }) */
+  })
 
   span1.finish()
 

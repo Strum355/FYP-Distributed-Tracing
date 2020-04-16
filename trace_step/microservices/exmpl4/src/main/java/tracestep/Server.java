@@ -19,8 +19,10 @@ import xyz.noahsc.tracestepshim.TracerShim;
 
 public class Server extends Application<Configuration> {
 
-    private Server(Tracer tracer) {
-        GlobalTracer.registerIfAbsent(tracer);
+    private Server(Tracer tracer) throws Exception {
+        if(!GlobalTracer.registerIfAbsent(tracer)) {
+            throw new Exception("failed to register shim");
+        }
     }
 
     @Path("/")
@@ -28,12 +30,11 @@ public class Server extends Application<Configuration> {
     public class PublisherResource {
         @GET
         public String handle(@Context HttpHeaders httpHeaders) {
-            Tracer tracer = GlobalTracer.get();
-            Span span = Tracing.startServerSpan(tracer, httpHeaders, "GET /handle");
+            Span span = Tracing.startServerSpan(httpHeaders, "GET /handle");
             try {
                 System.out.println("sample test");
                 span.log(ImmutableMap.of("event", "println", "value", "hello world"));
-                //span.setTag("_tracestep_stack", Thread.currentThread().getStackTrace());
+                span.setTag("_tracestep_stack", "sample text");
                 return "published";
             } finally {
                 span.finish();
@@ -51,6 +52,6 @@ public class Server extends Application<Configuration> {
         System.setProperty("dw.server.adminConnectors[0].port", "9082");
         System.setProperty("JAEGER_ENDPOINT", "http://localhost:14268/api/traces?format=jaeger.thrift");
 
-        new Server(new TracerShim(Tracing.init("example4"), 1)).run(args);
+        new Server(new TracerShim(Tracing.init("example4"), 1, "tracestep")).run(args);
     }
 }

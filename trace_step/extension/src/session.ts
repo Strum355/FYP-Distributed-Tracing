@@ -142,6 +142,7 @@ export class DebugAdapter extends LoggingDebugSession {
               spans {
                 spanID
                 startTime
+                parentSpanID
                 serviceName
                 operationName
                 stacktrace {

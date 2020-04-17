@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { basename, join } from 'path'
 import * as vscode from 'vscode'
 import * as vscodedebug from 'vscode-debugadapter'
-import { StackFrame, Tag, Trace } from './types'
+import { equal, StackFrame, Tag, Trace } from './types'
 
 // TODO: clicking next sometimes doubled on the same frame
 export class Runtime extends EventEmitter {
@@ -31,6 +31,9 @@ export class Runtime extends EventEmitter {
       s.stacktrace.stackFrames = s.stacktrace.stackFrames.reverse()
       return s
     })
+
+    this.trimCommonStackframePrefixes()
+
     console.log(`[RUNTIME] started runtime`)
     console.log(`[RUNTIME] GraphQL Response: ${JSON.stringify(this.trace, null, 4)}`)
     
@@ -38,6 +41,20 @@ export class Runtime extends EventEmitter {
 
     await this.loadNextSpan()
     this.stepForward()
+  }
+
+  // not optimized. last minute job
+  private trimCommonStackframePrefixes() {
+    const spans = this.trace!!.spans
+    for(let i = spans.length-1; i > 0; i--) {
+      if(spans[i].serviceName !== this.trace!!.spans.filter(s => s.spanID === spans[i].parentSpanID)[0].serviceName) continue
+      
+      let j = 0;
+      while(equal(spans[i].stacktrace.stackFrames[j], this.trace!!.spans.filter(s => s.spanID === spans[i].parentSpanID)[0].stacktrace.stackFrames[j])) {
+        j++
+      }
+      for(let k = 0; k < j; k++) spans[i].stacktrace.stackFrames.shift()
+    }
   }
 
   // Baggage KV are stored as a log point in the span they were created on.
@@ -197,7 +214,7 @@ export class Runtime extends EventEmitter {
   public async stepForward() {
     if(this.stackIdx === this.sourceFileStack.length-1) {
       const hitEnd = await this.loadNextSpan()
-      if(hitEnd) {
+      if(!hitEnd) {
         this.sendStopOnStepEvent()
         return
       }

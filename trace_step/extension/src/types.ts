@@ -47,3 +47,10 @@ export type LogPointField = {
   type: string
   value: string
 }
+
+export function equal(frame1: StackFrame, frame2: StackFrame): boolean {
+  const equal = frame1.filename === frame2.filename &&
+    frame1.line === frame2.line && 
+    frame1.packageName === frame2.packageName
+  return equal
+}

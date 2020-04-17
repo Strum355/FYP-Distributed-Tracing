@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bench": "tsc || node index.js"
+    "bench": "tsc . > /dev/null 2>&1 || node index.js"
   },
   "author": "",
   "license": "ISC",

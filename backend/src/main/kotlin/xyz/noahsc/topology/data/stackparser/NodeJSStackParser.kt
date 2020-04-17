@@ -26,4 +26,5 @@ class NodeJSStackParser(var stacktrace: String, val execPath: String) {
             0 -> "main"
             else -> pathWithoutFile
         }
+    }
 }

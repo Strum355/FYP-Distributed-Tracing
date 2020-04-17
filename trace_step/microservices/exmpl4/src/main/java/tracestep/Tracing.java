@@ -2,6 +2,7 @@ package tracestep;
 
 import java.util.HashMap;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 
 import io.jaegertracing.Configuration;
@@ -36,9 +37,8 @@ public final class Tracing {
         return config.getTracer();
     }
 
-    public static Span startServerSpan(javax.ws.rs.core.HttpHeaders httpHeaders, String operationName) {
+    public static Span startServerSpan(HttpHeaders httpHeaders, String operationName) {
         Tracer tracer = GlobalTracer.get();
-        // format the headers for extraction
         MultivaluedMap<String, String> rawHeaders = httpHeaders.getRequestHeaders();
         final HashMap<String, String> headers = new HashMap<String, String>();
         for (String key : rawHeaders.keySet()) {
@@ -56,7 +56,6 @@ public final class Tracing {
         } catch (IllegalArgumentException e) {
             spanBuilder = tracer.buildSpan(operationName);
         }
-        // TODO could add more tags like http.url
         return spanBuilder.withTag(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER).start();
     }
 }

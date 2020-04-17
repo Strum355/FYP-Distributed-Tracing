@@ -13,7 +13,6 @@ public class TracerShim(val tracer: Tracer, val stackOffset: Int): Tracer by tra
     init {
         val manifest = this.javaClass.classLoader.getResource("META-INF/MANIFEST.MF")
         packageRoot = mainClassRe.find(manifest.readText())!!.destructured.component1().removeSuffix(".")
-        println(packageRoot)
     }
 
     override fun buildSpan(operationName: String): Tracer.SpanBuilder {
@@ -24,10 +23,12 @@ public class TracerShim(val tracer: Tracer, val stackOffset: Int): Tracer by tra
         override fun start(): Span {
             val span = builder.start()
             val stackBuilder = StringBuilder()
-            Thread.currentThread().stackTrace.filter { it ->
-                it.className.startsWith(packageRoot)
-            }.forEach { 
-                stackBuilder.append("${it.className} ${it.lineNumber}\n")
+            StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk { 
+                it.filter { f -> 
+                    f.className.startsWith(packageRoot) 
+                }.forEach { 
+                    stackBuilder.append("${it.className} ${it.lineNumber}\n") 
+                }
             }
             
             span.setTag("_tracestep_lang", "jvm")

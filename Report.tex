@@ -17,11 +17,21 @@
 \graphicspath{{./assets/}}
 
 \PassOptionsToPackage{hyphens}{url}\usepackage{url}
-\usepackage{microtype, caption, copyrightbox, setspace, textcomp, soul, hyperref, listings}
+\usepackage[htt]{hyphenat}
+\usepackage{microtype, caption, copyrightbox, setspace, textcomp, soul, listings, booktabs, makecell}
 \usepackage{assets/listings-kotlin, assets/listings-graphql, assets/listings-typescript}
 \captionsetup[lstlisting]{font={scriptsize},width=0.8\linewidth}
 \captionsetup[figure]{font={scriptsize},width=0.8\linewidth}
+\captionsetup[table]{font={scriptsize},width=0.6\linewidth}
 \setstretch{1.05}
+
+\usepackage[
+    pdftex,
+    pdfauthor={Noah Santschi-Cooney},
+    pdftitle={Alternative Visualisations of Distributed Tracing data in a complex, large-scale distributed system},
+    pdfsubject={Distributed Tracing},
+    pdfkeywords={Distributed Tracing, Debug Adapter},
+]{hyperref}
 
 \hypersetup{
     colorlinks,
@@ -108,6 +118,10 @@
         \tableofcontents
     \end{spacing}
 
+    \begin{spacing}{1.0}
+        \listoffigures
+    \end{spacing}
+
     \chapter{Introduction}
     \pagenumbering{arabic}
     \setcounter{page}{1}
@@ -149,8 +163,8 @@
             \begin{figure}[hbt!]
                 \centering
                 \includegraphics[scale=0.335]{debugger.png}
-                \caption{Screenshot of the Visual Studio Code debugger in action. Clockwise, shown are an expandable list of local and global variables, the currently open file view
-                with the line currently halted on highlighted along with controls for stepping and finally the function call stack.}
+                \caption[Screenshot of the Visual Studio Code debugger in action.]{Screenshot of the Visual Studio Code debugger in action. Clockwise, shown are an expandable list of 
+                local and global variables, the currently open file view with the line currently halted on highlighted along with controls for stepping and finally the function call stack.}
                 \label{fig:debugger}
             \end{figure}
             
@@ -212,9 +226,10 @@
             scenarios. Chapters 5 and 6 will draw the writeup to a conclusion, detailing the closing thoughts and putting forward ideas for future work on the ideas explored in this project.
 
     \chapter{Background}
-        \small{In this chapter we will briefly cover the history of distributed tracing, the major tools and specifications that lay the foundation of what distributed tracing is today,
+        In this chapter we will briefly cover the history of distributed tracing, the major tools and specifications that lay the foundation of what distributed tracing is today,
         as well as upcoming standards that aim to modernise and solve the short-comings of what came before. This will be followed by a summary of some commonly adopted visualisations
-        of distributed tracing data as well as the work that will be carried out in furthering research into visualising tracing data.}
+        of distributed tracing data as well as the work that will be carried out in furthering research into visualising tracing data.
+        \bigskip
 
         \section{History \& Future}
             \subsection{Dapper}
@@ -270,7 +285,7 @@
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
-                        \includegraphics[scale=0.45]{opentracing.png}
+                        \includegraphics[scale=0.48]{opentracing.png}
                     }{\tiny{\textcopyright OpenTracing "OpenTracing Overview"}}
                     \caption{Infographic visualising the different components that make up the OpenTracing API interface and how they relate to different services
                     and the network}
@@ -285,10 +300,9 @@
                 that included services over which a company may not have control over the source code, where different codebases may use different tracer implementations, causing context
                 propagation to fall apart. This is one of the issues that the \textit{OpenTelemetry} project, outlined in Section~{\ref{sec:opentele}}, attempts to resolve.
 
+                \bigskip
                 \begin{spacing}{1.0}
                     \begin{lstlisting}[caption=Example Go language snippet of instatiating a Datadog OpenTracing compatible tracer., language=Go, gobble=24, label={lst:ddogtrace}]
-                        package main
-
                         import (
                             "gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
                             "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
@@ -301,15 +315,14 @@
                             tracer.WithAgentAddr("host:port"),
                             tracer.WithServiceName("sample-text"))
 
-                            // Use it with the OpenTracing API, setting it as global.
+                        // Use it with the OpenTracing API, setting it as global.
                         opentracing.SetGlobalTracer(t)
                     \end{lstlisting}
                 \end{spacing}
 
+                \bigskip
                 \begin{spacing}{1.0}
                     \begin{lstlisting}[caption=Example Go language snippet of instatiating a Jaeger OpenTracing compatible tracer., language=Go, gobble=24, label={lst:jaegertrace}]
-                        package main
-
                         import (
                             "github.com/uber/jaeger-client-go"
                             "github.com/uber/jaeger-client-go/transport"
@@ -402,15 +415,17 @@
                 scenarios. Coupled with an overview of metrics for each node and edge in the graph, such as error rates or response times,
                 they have proven to be a valuable monitoring tool.
 
+                \medskip
                 \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
-                        \includegraphics[scale=0.3]{datadog-clustered-map.png}
+                        \includegraphics[scale=0.31]{datadog-clustered-map.png}
                     }{\tiny{\textcopyright{Datadog - Introducing the Service Map in Datadog. https://www.datadoghq.com/blog/service-map/}}}
                     \caption{Metrics-based service topology visualisation, showing the dependencies between different services in a distributed system as well as
                     aggregated metrics relating to each node, such as request rate, latency and error percentage.}
                 \end{figure}
                 
+                \newpage
                 To bring such visualisations beyond monitoring and into the realm of observability, there is a need for a more dynamic and granular 
                 system, not operating on pre-aggregated metrics. The ability to generate views based on arbitrary attributes would allow for users 
                 of the system to create more germane and focused graphs based on their needs, such as grouping by high cardinality fields like end-user IP address, 
@@ -448,7 +463,7 @@
                 storing and retrieving distributed tracing data and being able to query the application runtime or employing other heuristics for gathering runtime data
                 on the call stack information.
         
-        \section{Conclusion}
+        \section{Summary}
             Even though distributed tracing has been around for just short of over a decade, it has only seen significant adoption with the inception of OpenTracing, unifying a set
             of standards to improve the experience of adopting distributed tracing. The upcoming OpenTelemetry standard aims to take what made OpenTracing as successful as it is and improve
             the developer experience further by making the distributed tracing API more vendor neutral and flexible. While the standards are evolving, services and platforms that consume
@@ -458,778 +473,887 @@
             find correlations in the data.
                     
 
-    \chapter{Design \& Implementation}
-        \small{In this section, the different technical aspects will be covered, design decisions and components that played a role throughout the projects lifecycle.
-        This will include third party services and platforms, and the roles they played. Implementation details such as languages and libraries used are discussed in the
-        \textbf{Implementation} sections. The \textbf{Designs and Architecture} sections cover protocols, APIs and interfaces that underpin the project, as well as the 
-        design and architecture decisions of the explored ideas in a language agnostic manner.}
+    \chapter{Designs and Architectures}
+    \label{sec:design}
+        In this section, the different technical design aspects will be covered including architectural decisions and components that played a role throughout the projects 
+        lifecycle. This will include third party software and platforms, the roles they played and how they influence the decisions made, as well as covering protocols, APIs 
+        and interfaces that underpin the project, as well as the design and architecture decisions of the explored ideas in a language agnostic manner.
 
-        \section{Designs and Architectures}
-            \subsection{Distributed Tracing API}
-                The OpenTracing API standard was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
-                source tooling built around the OpenTracing API in contrast to OpenCensus or, particularly, OpenTelemetry, as well as the students prior experience with OpenTracing.
+        \section{Distributed Tracing API}
+            The OpenTracing API standard was chosen as the foundation for this project. This decision was made due to the large language support and comprehensive open
+            source tooling built around the OpenTracing API in contrast to OpenCensus or, particularly, OpenTelemetry, as well as the students prior experience with OpenTracing.
 
-                OpenTelemetry was initially considered as an alternative choice instead of OpenTracing, but was ultimately decided against due to it still being a very new
-                standard, with OpenTracing having much more comprehensive support and documentation resources from both application libraries and distributed tracing tools.
-                OpenTelemetry was still in pre-beta stage when this final year project was started, with the beta releases for a number of instrumentation libraries having been
-                announced in March 30th 2020. This would have added huge delay in being able to commence the project on top of additional complexity being introduced than what exists 
-                in a simple development-oriented OpenTracing setup with the OpenTelemetry backing components, including the collector and exporters.
+            OpenTelemetry was initially considered as an alternative choice instead of OpenTracing, but was ultimately decided against due to it still being a very new
+            standard, with OpenTracing having much more comprehensive support and documentation resources from both application libraries and distributed tracing tools.
+            OpenTelemetry was still in pre-beta stage when this final year project was started, with the beta releases for a number of instrumentation libraries having been
+            announced in March 30th 2020. This would have added huge delay in being able to commence the project on top of additional complexity being introduced than what exists 
+            in a simple development-oriented OpenTracing setup with the OpenTelemetry backing components, including the collector and exporters.
 
-                Potential explorations around the OpenTelemetry API are discussed in the \textbf{Future Work} section.
+            While the collection of the necessary runtime information required for the ideas to be explored in this project may incur significant runtime costs, the OpenTracing API 
+            does not provide a way to check whether a trace is being sampled or not, while the OpenTelemetry API does provide such a capability{\cite{openteleisrecording}}. Further discussion 
+            around in the implications of this can be found in Section~{\ref{sec:collecting}}, while potential future explorations around the OpenTelemetry API are discussed in the
+            \textbf{Future Work} section.
 
-            \newpage
-            \subsection{Supporting Services}
-                As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
-                Firstly, a way of collecting trace data from applications is needed, and secondly, the database into which the data is persisted.
-                
-                The distributed tracing platform, Jaeger, was chosen for this project. Jaeger is wholly self-hostable, providing a convenient setup for single-machine development purposes with
-                a single, all-inclusive binary available from the distribution archives, as well as a pre-built \textit{Docker} image published to DockerHub. The full Jaeger package,
-                available in whole in the aforementioned all-inclusive formats, includes the trace collector, trace search and visualisation user interface and agent.
+        \section{Supporting Services}
+            As both explored ideas will be interacting with distributed tracing data, there are two pieces to the puzzle of having a set of traces to work with.
+            Firstly, a way of collecting trace data from applications is needed, and secondly, the database into which the data is persisted.
+            
+            The distributed tracing platform, Jaeger, was chosen for this project. Jaeger is wholly self-hostable, providing a convenient setup for single-machine development purposes with
+            a single, all-inclusive binary available from the distribution archives, as well as a pre-built \textit{Docker} image published to DockerHub. The full Jaeger package,
+            available in whole in the aforementioned all-inclusive formats, includes the trace collector, trace search and visualisation user interface and agent.
 
-                By default, the all-in-one Jaeger distribution stores all trace data in-memory. For convenience to persist data in between machine reboots, the JSON document search engine
-                database, \textit{Elasticsearch}, was chosen as the storage backend for Jaeger, as one of two possible choices alongside \textit{Apache Cassandra}, a column store document
-                database. The Backend API, discussed later in this chapter, interfaces with the Elasticsearch database as the source of truth for the trace data. A complementary user interface
-                for Elasticsearch, maintained by the developers of Elasticsearch, \textit{Kibana}, was used throughout the development of the project to view the raw trace data as it is 
-                represented in the database.
+            By default, the all-in-one Jaeger distribution stores all trace data in-memory. For convenience to persist data in between machine reboots, the JSON document search engine
+            database, \textit{Elasticsearch}, was chosen as the storage backend for Jaeger, as one of two possible choices alongside \textit{Apache Cassandra}, a column store document
+            database. The Backend API, discussed later in this chapter, interfaces with the Elasticsearch database as the source of truth for the trace data. A complementary user interface
+            for Elasticsearch, maintained by the developers of Elasticsearch, \textit{Kibana}, was used throughout the development of the project to view the raw trace data as it is 
+            represented in the database.
 
-            \subsection{Backend API}
-                To query for and transform the distributed tracing data stored in Elasticsearch, an HTTP API was developed for the two codebases of the ideas explored to interface with.
-                It implements a GraphQL HTTP API server, the concepts of which are explained in detail below, to fetch the trace data from Elasticsearch. Figure~\ref{fig:arch} illustrates
-                the final design of the architecture, showing where the backend API, trace data consuming clients (the implementations of the ideas that will be discussed), trace data collectors
-                outlined in the previous section as well as the applications that emit trace data fit into the picture.
+        \section{Backend API}
+            To query for and transform the distributed tracing data stored in Elasticsearch, an HTTP API was developed for the two codebases of the ideas explored to interface with.
+            It implements a GraphQL HTTP API server, the concepts of which are explained in detail below, to fetch the trace data from Elasticsearch. Figure~\ref{fig:arch} illustrates
+            the final design of the architecture, showing where the backend API, trace data consuming clients (the implementations of the ideas that will be discussed), trace data collectors
+            outlined in the previous section as well as the applications that emit trace data fit into the picture.
 
-                \subsubsection{GraphQL}
-                    As an alternative to traditional RESTful HTTP services, GraphQL is both a query language and a server-side runtime for executing queries against a defined data schema
-                    laid out by the type system. The type system can be shared between both servers and clients alike, allowing for a common, known data schema. The data schema consists of 
-                    user defined object types representing the data, as well as two special types: the \textit{Query} type and the \textit{Mutation} type. These define the entrypoints into
-                    the GraphQL server, allowing for the fetching and modification of data by a named entrypoint. These entrypoints can take a defined set of arguments and return any type
-                    detailed in the schema, of which any argument and the return type may be denoted as being optional.
+            \subsection{GraphQL}
+                As an alternative to traditional RESTful HTTP services, GraphQL is both a query language and a server-side runtime for executing queries against a defined data schema
+                laid out by the type system. The type system can be shared between both servers and clients alike, allowing for a common, known data schema. The data schema consists of 
+                user defined object types representing the data, as well as two special types: the \textit{Query} type and the \textit{Mutation} type. These define the entrypoints into
+                the GraphQL server, allowing for the fetching and modification of data by a named entrypoint. These entrypoints can take a defined set of arguments and return any type
+                detailed in the schema, of which any argument and the return type may be denoted as being optional.
 
-                    \begin{lstlisting}[caption={The base GraphQL schema, defining a query and data types for the trace data.}, language=GraphQL, gobble=24]
-                        type Query {
-                            findTrace(traceID: String!): Trace
-                        }
+                \smallskip
+                \begin{lstlisting}[caption={The base GraphQL schema, defining a query and data types for the trace data. Type annotations surrounded brackets denote a list of the type,
+                    while a type annotation followed by an exclamation mark indicates a non-optional type.}, language=GraphQL, gobble=20]
+                    type Query {
+                        findTrace(traceID: String!): Trace
+                    }
 
-                        type Trace {
-                            traceID: String!
-                            spans: [Span!]!
-                        }
+                    type Trace {
+                        traceID: String!
+                        spans: [Span!]!
+                    }
 
-                        type Span {
-                            traceID: String!
-                            spanID: String!
-                            parentSpanID: String
-                            duration: Int!
-                            startTime: Int!
-                            operationName: String!
-                            serviceName: String!
-                            logs: [LogPoint!]
-                            tags: [Tag!]
-                        }
-
-                        type LogPoint {
-                            timestamp: Int!
-                            fields: [LogPointField!]!
-                        }
-
-                        type LogPointField {
-                            key: String!
-                            type: String!
-                            value: String!
-                        }
-
-                        type Tag {
-                            key: String!
-                            type: String!
-                            value: String!
-                        }
-                    \end{lstlisting}
-                    \bigskip
-                    
-                    One of GraphQLs improvements over traditional REST is the ability to specify fields to \textit{resolve} in the server-side runtime engine. Besides preventing
-                    under- and over-fetching, this also allows for the ability to selectively augment the returned data, adding extra fields or even changing existing ones on-demand,
-                    all within the same query while not incurring the costs for clients that do not request them. Listing~\ref{lst:graphTrace} shows an example of selective field
-                    resolving. The second query also requests the \texttt{spans} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
-                    statement, while also resulting in potentially more data being sent down the wire.
-
-                    \begin{lstlisting}[caption={GraphQL query to fetch a trace object and the span ID of each of its spans vs a query to fetch the trace object, its spans and every
-                        tag of every span.}, label={lst:graphTrace}, language=GraphQL, gobble=24]
-                        {
-                            query findTrace(traceID: "asdf") {
-                                traceID
-                                spans {
-                                    spanID
-                                }
-                            }
-                        }
-
-                        {
-                            query findTrace(traceID: "asdf") {
-                                traceID
-                                spans {
-                                    spanID
-                                    tags {
-                                        key
-                                        value
-                                    }
-                                }
-                            }
-                        }
-                    \end{lstlisting}
-
-                \subsubsection{Interfacing with the Database}
-                    As the decision was made to use the Jaeger tracing platform backed by Elasticsearch for this project, the backend server must interface with Elasticsearch
-                    to be able to serve the data to the API clients that make up this project. Under these circumstances, this project could be potentially used in production
-                    by teams that host a Jaeger tracing platform on their infrastructure with Elasticsearch. The backend must simply support connecting to the database, building 
-                    JSON queries at either an abstracted or low level and finally being able to execute those queries against the database. Elasticsearch has first-party libraries
-                    for a  large number of languages, and given Kotlin's interoperability with Java, the backend makes use of the Java Elasticsearch client library. Adding support 
-                    for Apache Cassandra database would be trivial, however outside of the scope of this project.
-
-                    While the Jaeger tracing platform is commonly employed by development teams, vendor hosted distributed tracing systems also have seen large adoption due to the 
-                    fact that it allows teams to not worry about maintaining an instance of Jaeger in their infrastructure, either due to convenience, monetary costs needed to host
-                    the Jaeger platform or having to maintain extra services. These vendors often do not provide a public API for querying and fetching trace data. Discussion around
-                    possible solutions for these scenarios can be found in the future works section. The rest of this report works under the assumption of the Jaeger tracing platform
-                    being employed, either as the sole distributed tracing system or complementary to a vendor hosted solution. 
-
-                \bigskip
-                \begin{figure}[hbt!]
-                    \centering
-                    \includegraphics[scale=0.2]{arch.png}
-                    \caption{Basic diagram illustrating the architecture design for a sample system, including applications instrumented to emit trace data, the Jaeger agents and/or collectors,
-                    the database in which trace data is persisted and the GraphQL HTTP API that the clients such as those implemented as part of this project interact with to obtain trace data.}
-                    \label{fig:arch}
-                \end{figure}
-
-            \subsection{Debug Adapter}
-                For this part of the project, it was decided to develop the idea of integrating the telemetry from instrumented applications into the debugger API of Visual Studio Code.
-                Visual Studio Code was chosen as the editor for which the integration would be built due to its extensive extensibility and first class Debug Adapter Protocol support. 
-                Built in TypeScript, a JavaScript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
-                and the editor to provide many of the same features one would expect from traditional debugger tools such as the GNU Project Debugger (GDB).
-
-                \subsubsection{Debug Adapter Protocol}
-                    Figure~\ref{fig:debug-arch} displays the general architecture of how editors and tools utilize the programs that implement the Debug Adapter Protocol to interact with
-                    lower level debug runtimes, such as GDB etc. Each editor or tool would contain a small, lightweight shim, one per debug adapter, that launches the debug adapter with the
-                    appropriate configuration, potentially with user supplied configuration data, before handing off to the in-editor/tool generic debugger that interacts with the now running
-                    debug adapter through the Debug Adapter Protocol.
-
-                    The Debug Adapter for this part of the project combines combines the three necessary parts in the one codebase, the shim, debug adapter and debugger runtime, for convenience
-                    in developing the proof of concept. It builds off the Visual Studio Code mock debug adapter\cite{mockdebug}, a sample codebase implementing the shim, debug adapter and a dummy debugger
-                    runtime in one. Heavily inspired by asynchronous event-based programming as is commonplace in the NodeJS ecosystem, the debug adapter invokes asynchronous methods on the 
-                    debugger runtime when it receives requests from the editor or tool in the Debug Adapter Protocol format, upon which the debugger runtime may emit events that the debug adapter
-                    translates into Debug Adapter Protocol events for the editor or tool to consume.
-
-                    \begin{figure}[hbt!]
-                        \centering
-                        \copyrightbox[r]{
-                            \includegraphics[scale=0.35]{debug-arch.png}
-                        }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
-                        \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
-                            editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
-                            Adapters.}
-                        \label{fig:debug-arch}
-                    \end{figure}
-
-                \subsubsection{Concept}
-                    Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it should fetch the spans and their metadata for the trace ID, load the 
-                    source code files for each span and allow the user to step through the code on a span-by-span basis (or more granular). If successful, the user would be able to see the
-                    source code file and line in which the current span was started and step back and forth between spans and their respective source code files and lines. Given the focus
-                    around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase, assuming that the codebases for the other 
-                    services also reside on the user's machine.
-                    
-                    The main approach to making this set of requirements possible is by utilizing the tag constructs defined in the OpenTracing specification to carry additional runtime or
-                    compile time information that provides enough information to the debugger runtime. This can be done by implementing shims that wrap OpenTracing trace implementations with
-                    methods that add the required information as tags to newly created span instances. When the debugger runtime queries the backend API, it can request an additional field on
-                    the span types that the backend GraphQL resolver resolves by transforming the information gathered by the shims into a format more useful to the debugger runtime than the
-                    raw collected information. This results in being able to interface with the same GraphQL query as the project idea that follows this part, while not incurring the 
-                    transformation costs in the following idea.
-                    % TODO: word this better
-
-                    In practice, there are a number of challenges that arise in various parts of this concept; gathering the information required to pinpoint the source file and line varies 
-                    in format across different programming languages, amount of stack trace information that is to be or that can be gathered and its formats across different programming 
-                    languages, mapping different services to the location in the filesystem of their codebase as well as handling spans emitted from services not appropriately instrumented 
-                    for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
-
-                \subsubsection{Collecting and Parsing Runtime Data}
-                    When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
-                    The first approach is to simply query the runtime, where applicable, for the file path and line number associated with the function that invoked the span creation. This is often
-                    a relatively cheap operation, with a small footprint in the amount of data that a span is tagged with. The main downside of this approach is that while it results in a small 
-                    amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime. With this information, the debugger runtime is
-                    limited to jumping between those single, individual points in the code at which the spans are created (this could be expanded to also wrap the log-point calls to do the same).
-                    
-                    The second approach involves querying the runtime for an entire stacktrace leading up to this point. With this approach, there is considerably more data, with all the function
-                    calls of the stack frame tree branch leading up to the span creation being gathered, allowing for the possibility to step back and forth at the function level rather than simply
-                    at the span level. In both these instances, the data is attached to spans as tags. This approach was chosen to be explored for the project due to the larger potential that accompanies
-                    the greater amount of data. For further processing outlined in the following paragraph, the programming language from which the span originates is added as a tag to the span.
-                    There are a few downsides to this approach and possible workarounds that will also be discussed.
-                    
-                    In many language implementations of the Jaeger tracer, tag values are limited in length to either 256 or 1024 characters. When dealing with stacktraces, this limit is too 
-                    restrictive for storing entire stacktraces. This is due to an outstanding issue in Jaeger client implementations when using UDP as the transport protocol, as span sizes
-                    would exceed the maximum UDP packet size of 65535 bytes\cite{udptagsize}. This makes using HTTP as the span transport method a hard requirement to avoid UDP packets being
-                    dropped, causing entire spans to be lost. The client implementations also provide an interface for changing the max tag value length, which must be utilised to prevent the truncating
-                    of the stacktraces. As this number cannot be set on a per-span basis, it must be set at a reasonably large number ahead of time based on previous examples of possible stacktrace sizes
-                    or the maximum value of an integer for the given platform. Another downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often 
-                    be considerably more expensive than adding simple tags to a span. Unfortunately, sampling rules in the Jaeger client implementations, the processes by which it is decided whether or 
-                    not spans are exported, are only applied to log points and the final reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if 
-                    the span will never be reported. Despite implementing head-based sampling, where it is know when the root span is created whether or not the trace will be reported, the API does not 
-                    expose an interface for querying this fact. For this reason, it was important to make the operation as cheap as possible, leaving as much of the stacktrace transformations as possible to 
-                    query time, when the debugger runtime requests a trace from the backend.
-
-                \subsubsection{Interfacing GraphQL API with Debug Adapter}
-                    With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is amended by adding a field to the span type with an associated resolver and 
-                    types that define a stacktrace and its individual stack frames. This resolver reads the stored stacktrace and the programming language associated with the span to process it into a 
-                    stacktrace object usable for the debugger runtime. As each language has a different format for its stacktraces, a stacktrace parser must be created for each language supported. These
-                    will parse the raw stacktrace strings and returns them as a parsed and formatted stacktrace object to the GraphQL resolver. Listing~\ref{lst:stack} shows the updated GraphQL schema
-                    with the unchanged sections filtered out. 
-
-                \bigskip
-                \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects. Unchanged fields and objects filtered. The \texttt{shouldReslolve} field indicates
-                    whether a file path requires additional resolving in the debugger runtime.}, language=GraphQL, gobble=20, label={lst:stack}]
                     type Span {
-                        // ...
-                        stacktrace: StackTrace
+                        traceID: String!
+                        spanID: String!
+                        parentSpanID: String
+                        duration: Int!
+                        startTime: Int!
+                        operationName: String!
+                        serviceName: String!
+                        logs: [LogPoint!]
+                        tags: [Tag!]
                     }
 
-                    // ...
-
-                    type StackTrace {
-                        stackFrames: [StackFrame!]!
+                    type LogPoint {
+                        timestamp: Int!
+                        fields: [LogPointField!]!
                     }
 
-                    type StackFrame {
-                        packageName: String
-                        filename: String!
-                        line: Int!
-                        shouldResolve: Boolean!
+                    type LogPointField {
+                        key: String!
+                        type: String!
+                        value: String!
+                    }
+
+                    type Tag {
+                        key: String!
+                        type: String!
+                        value: String!
                     }
                 \end{lstlisting}
+                
+                One of GraphQLs improvements over traditional REST is the ability to specify fields to \textit{resolve} in the server-side runtime engine. Besides preventing
+                under- and over-fetching, this also allows for the ability to selectively augment the returned data, adding extra fields or even changing existing ones on-demand,
+                all within the same query while not incurring the costs for clients that do not request them. Listing~\ref{lst:graphTrace} shows an example of selective field
+                resolving. The second query also requests the \texttt{spans} field, which could have a range of effects on the server e.g. performing an extra SQL \texttt{JOIN}
+                statement, while also resulting in potentially more data being sent down the wire.
+
                 \bigskip
-
-                In this format, the debugger runtime has a more language agnostic representation of the stacktraces collected over the lifetime of a trace. There are still differences
-                in how absolute local paths are resolved from this information in order to load the correct file in the editor from the users local filesystem, from differences in how
-                codebases are structured into different packages for encapsulation and modularisation, as well as where dependencies are stored in the filesystem. For simplicity, 
-                resolving dependencies was not included in this project outside of the standard library for languages where implementation was trivial.
-
-                Alongside showing a stacktrace and the line in the file where the current span was created (or in the case of traditional debuggers, the line it has halted execution on),
-                editors often have a panel dedicated for displaying local and global variables for the current stack frame and execution context. Largely due to performance reasons, it is
-                not possible to attain this level of information on local and global variables when in the distributed tracing context unlike when using a halting debugger, assuming that 
-                \textit{DWARF} symbols (\textit{Debugging With Arbitrary Record Formats}, a standardized debugging data format embedded in executable binaries)\cite{dwarf} are still baked 
-                into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. Instead of this, the different types off
-                tags and other key-value pairs can be displayed in said panel in place of variables. This works best when traces are heavily tagged with rich, high cardinality metadata which gives 
-                greater insight into a service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to those with 
-                a common set of tags that exhibit certain behaviour.
-                % TODO: is this the right place for that last line? why else would we want high cardinality 
-
-            \subsection{Service Topology Frontend}
-                In the service topology part of the project, the aim is to explore how to increase the value derivable from graph representations of the topology of a service architecture, at 
-                both an individual trace level and in aggregate. A common visualisation in many vendors in basic formats, they are commonly based on a type of directed graph called a 
-                \textit{force-directed graph} due to its aesthetically pleasing properties. In the following section, the two main classes of service topology visualisations will be introduced,
-                monitoring oriented and metrics based visualisation as well as observability oriented and event based visualisations, with the differences between the two being highlighted with an 
-                emphasis on the need for the latter type.
-        
-                A basic service topology graph can give a quick overview of the dependencies between different services in a distributed system. However, it provides little value as an observability tool
-                for debugging production issues or finding internal services that are returning errors for certain customers. For developers and administrators to derive tangible value from such a 
-                visualisation, there is a need for a more dynamic system. The ability to generate views based on arbitrary attributes would allow for users of the system to create more personalized and 
-                focused graphs based on their needs, such as grouping by high cardinality fields like end-user IP address, user identifiers as well as metrics such as error rates, response times 
-                etc\cite{doingitwrongtopo}.
-
-                While they are commonly found in distributed tracing vendor services, the implementations are often very simplistic. A common example of such an implementation begins with a basic, often directed
-                graph of each service as defined by the service name metadata passed into a tracer implementation. From this, the relationships between graph nodes is drawn by querying a spans service name
-                and that of its parent span, which gives both the relationship and the directionality of said relationship. Nodes and edges are then often annotated with various metrics derived from the various
-                span fields and tags, with average or percentiles of span durations as well as error rates and number of requests per unit of time being the standard figures on display. Figure~\ref{fig:risingstacktopo}
-                is an example of such an implementation from The RisingStack's NodeJS monitoring platform. Often misrepresented as features of \textit{observability} platforms or services, graphs of such kind are
-                more aptly described as features of \textit{monitoring} platforms or services. The line between the two terms is often intentionally blurred by vendors which provide monitoring services looking to sell
-                to companies who are in need of observability services. Monitoring is commonly described as being how \textbf{known-unknowns} are handled, including defining thresholds for values on metrics such as
-                error rates or response times, most commonly working with pre-aggregated data of low dimensionality to give a quick, overview of the system in aggregate. Such systems are ideally tailored towards 
-                answering the questions one knows to ask beforehand, hence known-unknowns, which can range from questions such as does the database server require more CPU power or if a recent deployment of a service
-                was correlated with an increase in API errors. 
-
-                \begin{figure}[hbt!]
-                    \centering
-                    \copyrightbox[r]{
-                        \includegraphics[scale=0.14]{service-topo-risingstack.png}
-                    }{\tiny\textcopyright{Gergely Nemeth on The RisingStack blog. https://blog.risingstack.com/distributed-transaction-tracing-microservices-monitoring/}}
-                    \caption{Example of the Microservices Topology visualisation from RisingStack's monitoring platform, showing a basic topology overview with key metrics based on traces.}
-                    \label{fig:risingstacktopo}
-                \end{figure}
-
-                In contrast, observability is all about the \textbf{unknown-unknowns}, being able to ask different, unforeseen questions to a highly dimensional dataset with high cardinality fields that allow
-                for arbitrary operations on raw, non-aggregated events, with the ability to drill down on individual events in the set from an aggregate overview. This allows one to receive answers to the questions 
-                on the behaviour of a system, in arbitrary aggregate down to an individual level. This sets the tone for what an advanced service topology visualisation should provide to allow for it to be distinguished 
-                from standard monitoring alternatives. Building off an event-based, non-aggregated dataset, the service topology graph will start out in a similar fashion to the aforementioned metrics based implementations,
-                however in contrast deriving metrics at query time from the events. This will serve as the foundation from which additional operations and features will build off.
-
-                \subsubsection{Filtering}
-                    The first vital operation that this visualisation should have is the ability to filter out traces from the working dataset arbitrarily. This allows us to reduce the amount of noise affecting the metrics
-                    on display at the edges and nodes, giving users the metrics specific to the new, filtered dataset view. As the user filters on various fields of arbitrary cardinality such as specific error codes,
-                    company identifiers or even performs filter operations on derived metrics such as the requests to a service with response times above a certain threshold, the metrics displayed on the graph such as HTTP error codes, 
-                    response times etc that are displayed in the graph update dynamically to reflect the new working set consisting of the filtered entries from the original dataset, allowing for questions such as "\textit{Is a particular 
-                    error associated with any particular service or node?}" or "\textit{What proportion of companies from a certain state with a certain cookie set are experiencing slow response times?}" to be asked without having 
-                    instrumented for those particular questions, while being visualised in a service centric style.
-
-                \subsubsection{Grouping}
-                    Grouping of data by an arbitrary field is the next operation that provides high value. This operation is a powerful method by which users can discover common traits of events exhibiting certain behaviour as well as the
-                    distribution of errors or other field values across events. By virtue of the form of the visualisation, groupings of event objects are displayed inherently by service identifier/name. This trait extends to grouping by
-                    additional fields, resulting in groupings always being in conjunction with service identifiers. The outcome of this is a topology view with a node for every service identifier/grouped field value combination. 
-                    
-                    As an example, assume a small scale service topology of 5 services for a business with 10 customers. The services consist of a database, an API gateway and three internal services. A user sees that the 99th percentile response
-                    time between two services, A and B, is abnormally high. To see if this problem is isolated to a specific customer or if it is happening to everyone, they could perform a group operation on the customer identifier. The topology 
-                    graph updates, with every service node being multiplied by ten in count e.g. ten nodes for service A, with combinations ranging from \{service name: A, customer ID: 0\} to \{service name: A, customer ID: 9\} and so on, along
-                    with the accompanying edges and metrics for each combination. With the response times now separated by customer identifier, the user can see the distribution of the high response times, whether or not it was isolated to 
-                    specific customers or not.
-
-                    For the trivial example given, the graph already expands from five nodes to 50 nodes after grouping by customer identifier. For a company with more customers, this would become unwieldy in size and should therefore be used in 
-                    conjunction with the aforementioned filtering capabilities to bring the graph down to a manageable size by excluding grouping combinations where the key metrics are not above or below a defined threshold or where a field does not
-                    match a given predicate.
-                    
-                    These capabilities can also be expanded to reduce noise in the case of high cardinality service identifiers e.g. if using a serverless platform such as AWS Lambda in which each serverless function invocation may have a locally
-                    unique identifier with a common prefix, the service topology graph may explode with a large number of one-time nodes. A form of conditional grouping, such as grouping all nodes where the service identifier begins with a given prefix, 
-                    could vastly reduce the noise from a graph featuring many nodes from ephemeral services as with serverless platforms or in companies with high deployment frequencies where service identifiers are uniquely suffixed on every deployment.
-                    
-                    % cookie example or 'what do these have in common'
-
-        \newpage          
-        \section{Implementations}    
-            \subsection{Debug Adapter}
-            \label{sec:impldebug}
-                The debugger implementation consists of a number of components that together form a whole package that can be used to extend the Visual Studio Code editor to provide users with the ability
-                to step through code of the different codebases residing on the users machine that together make up a distributed system. The main implementation details such as interfacing with the backend
-                server outlined in Section~\ref{sec:backend}, how the data is consumed and presented to the user will be discussed in this section.
-
-                As both the Debug Adapter Protocol, Visual Studio Code and TypeScript are all maintained by Microsoft, and given that Visual Studio Code is built on TypeScript with comprehensive support for the language
-                in developing extensions for it, TypeScript was the obvious choice to implement this project in. Microsoft provide a sample Github repository containing a mock debugger runtime, Visual Studio Code extension
-                and debug adapter. As it contains the necessary boilerplate code from which a fully-fledged debugger runtime and debug adapter can be made, it served as the base for this project.
-
-                The debugger is composed primarily of three parts: the extension that Visual Studio Code loads, the debug adapter that the extension initialises and informs Visual Studio Code about, and the debugger runtime
-                that consumes distributed tracing data from the GraphQL server and for which the debug adapter acts as a bridge so that Visual Studio Code can communicate with it. With reference to Figure~\ref{fig:vscodedebug},
-                the \textit{Debug Extension} is the metadata that defines the extension that Visual Studio Code consumes, which can be found in the \texttt{package.json} manifest file. This includes the entrypoint JavaScript file 
-                that starts the extension, what it contributes as an extension (in this case, a debugger) amongst other metadata. Following on from this, the \textit{Extension Code} includes the entrypoint defined in the 
-                aforementioned metadata, and handles the activation, deactivation and the registering of its capabilities through the \textit{Extension API}. One such capability that can be registered is a \textit{Debug Adapter 
-                Descriptor Factory}. From this factory, a debug adapter can be activated and the information required for Visual Studio Code to interact with the debug adapter, the \textit{Descriptor} part of the previous term, 
-                is consumed by Visual Studio Code. This allows Visual Studio Code to interact with the \textit{Debug Adapter} directly over the \textit{Debug Adapter Protocol}, communicating with the \textit{Debugger} through the 
-                Debug Adapter.
-
-                \begin{figure}[hbt!]
-                    \centering
-                    \copyrightbox[r]{
-                        \includegraphics[scale=0.37]{vscodeadapter.png}
-                        }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
-                        \caption{The relationships between Visual Studio Code, the Extension API, the Debug Adapter Protocol, the Visual Studio Code extension, the Debug Adapter and the Debugger Runtime in allowing
-                        Visual Studio Code to interact with arbitrary debuggers through a common protocol.}
-                        \label{fig:vscodedebug}
-                    \end{figure}
-
-                \newpage
-                Visual Studio Code provides two main types of Debug Adapter Descriptors that define how the debug adapter is run and interacted with: a socket based server or an executable. As this debug extension is wholly self contained, 
-                (all three components, the extension, debug adapter and debugger runtime, are part of a single NodeJS compilation unit) the descriptor type chosen was the socket based server. Upon initialisation, a socket based server is 
-                created that creates an instance of the debug adapter class when a connection is made. Once the socket is ready to accept connections, Visual Studio Code is informed of the port that it is listening to, so that Visual Studio 
-                Code may interact with it. Listing~\ref{lst:descriptor} highlights the basic code required for declaring a method for creating a socket-based debug adapter descriptor. An instance of the \texttt{AdapterDescriptorFactory} class 
-                is registered with Visual Studio Code by the extension under a given name. This instructs Visual Studio Code on which debug adapter descriptor factory to invoke the \texttt{createDebugAdapterDescriptor} method on in order to 
-                initialise a debug adapter instance to communicate with.
-
-                \newpage
-                \begin{spacing}{1.0}
-                    \begin{lstlisting}[label={lst:descriptor}, gobble=24, language=TypeScript, caption={The method used to initialise the Debug Adapter and return the Debug Adapter Descriptor to Visual Studio Code.}]
-                        class AdapterDescriptorFactory implements DebugAdapterDescriptorFactory {
-                            
-                            createDebugAdapterDescriptor(
-                                session: DebugSession,
-                                executable: DebugAdapterExecutable | undefined
-                            ): ProviderResult<DebugAdapterDescriptor> {
-                                const server = Net.createServer(socket => {
-                                    const debugAdapter = new DebugAdapter()
-                                    debugAdapter.setRunAsServer(true)
-                                    debugAdapter.start(socket, socket)
-                                }).listen(0)
-
-                                return new vscode.DebugAdapterServer(
-                                    (this.server.address() as Net.AddressInfo).port
-                                )
+                \begin{lstlisting}[caption={GraphQL query to fetch a trace object and the span ID of each of its spans vs a query to fetch the trace object, its spans and every
+                    tag of every span.}, label={lst:graphTrace}, language=GraphQL, gobble=20]
+                    {
+                        query findTrace(traceID: "asdf") {
+                            traceID
+                            spans {
+                                spanID
                             }
                         }
-                    \end{lstlisting}
-                \end{spacing}
+                    }
 
-                The debug adapter and debugger runtime communicate in an asynchronous fashion through regular method invocations. Upon initialisation, the debug adapter also initialises an instance of the debugger runtime, adds an event handler 
-                on it to listen for emitted events from the debugger runtime and saves a reference to the initialised object. The debug adapter is then ready to receive events from Visual Studio Code, upon which it receives the \textit{Initialize}
-                request, in which the client (Visual Studio Code in this instance) and debug adapter inform each other of their capabilities according to the debug adapter protocol specification, the \textit{Configuration Done} request, which informs 
-                the debug adapter that the client has finished initialisation, and finally the \textit{Launch} request. For a visual representation of a more exhaustive flow given a richer set of capabilities announced by the debug adapter than were
-                included in the scope of implementing this final year project, see Figure~\ref{fig:dapflow}, with the full specification and overview available online at \url{https://microsoft.github.io/debug-adapter-protocol/specification}.
-                
-                \begin{figure}[htb!]
+                    {
+                        query findTrace(traceID: "asdf") {
+                            traceID
+                            spans {
+                                spanID
+                                tags {
+                                    key
+                                    value
+                                }
+                            }
+                        }
+                    }
+                \end{lstlisting}
+
+            \subsection{Interfacing with the Database}
+                As the decision was made to use the Jaeger tracing platform backed by Elasticsearch for this project, the backend server must interface with Elasticsearch
+                to be able to serve the data to the API clients that make up this project. Under these circumstances, this project could be potentially used in production
+                by teams that host a Jaeger tracing platform on their infrastructure with Elasticsearch. The backend must simply support connecting to the database, building 
+                JSON queries at either an abstracted or low level and finally being able to execute those queries against the database. Elasticsearch has first-party libraries
+                for a  large number of languages, and given Kotlin's interoperability with Java, the backend makes use of the Java Elasticsearch client library. Adding support 
+                for Apache Cassandra database would be trivial, however outside of the scope of this project.
+
+                While the Jaeger tracing platform is commonly employed by development teams, vendor hosted distributed tracing systems also have seen large adoption due to the 
+                fact that it allows teams to not worry about maintaining an instance of Jaeger in their infrastructure, either due to convenience, monetary costs needed to host
+                the Jaeger platform or having to maintain extra services. These vendors often do not provide a public API for querying and fetching trace data. Discussion around
+                possible solutions for these scenarios can be found in the future works section. The rest of this report works under the assumption of the Jaeger tracing platform
+                being employed, either as the sole distributed tracing system or complementary to a vendor hosted solution. 
+
+            \bigskip
+            \begin{figure}[hbt!]
+                \centering
+                \includegraphics[scale=0.2]{arch.png}
+                \caption{Basic diagram illustrating the architecture design for a sample system, including applications instrumented to emit trace data, the Jaeger agents and/or collectors,
+                the database in which trace data is persisted and the GraphQL HTTP API that the clients such as those implemented as part of this project interact with to obtain trace data.}
+                \label{fig:arch}
+            \end{figure}
+
+        \section{Debug Adapter}
+            For this part of the project, it was decided to develop the idea of integrating the telemetry from instrumented applications into the debugger API of Visual Studio Code.
+            Visual Studio Code was chosen as the editor for which the integration would be built due to its extensive extensibility and first class Debug Adapter Protocol support. 
+            Built in TypeScript, a JavaScript superset with type annotations, the service implements the Debug Adapter Protocol to bridge between the trace data stored in Elasticsearch
+            and the editor to provide many of the same features one would expect from traditional debugger tools such as the GNU Project Debugger (GDB)\cite{gdb} but in a vastly different
+            context.
+
+            \subsection{Debug Adapter Protocol}
+                Figure~\ref{fig:debug-arch} displays the general architecture of how editors and tools utilize the programs that implement the Debug Adapter Protocol to interact with
+                lower level debug runtimes, such as GDB etc. Each editor or tool would contain a small, lightweight shim, one per debug adapter, that launches the debug adapter with the
+                appropriate configuration, potentially with user supplied configuration data, before handing off to the in-editor/tool generic debugger that interacts with the now running
+                debug adapter through the Debug Adapter Protocol.
+
+                The Debug Adapter for this part of the project combines combines the three necessary parts in the one codebase, the shim, debug adapter and debugger runtime, for convenience
+                in developing the proof of concept. It builds off the Visual Studio Code mock debug adapter\cite{mockdebug}, a sample codebase implementing the shim, debug adapter and a dummy debugger
+                runtime in one. Heavily inspired by asynchronous event-based programming as is commonplace in the NodeJS ecosystem, the debug adapter invokes asynchronous methods on the 
+                debugger runtime when it receives requests from the editor or tool in the Debug Adapter Protocol format, upon which the debugger runtime may emit events that the debug adapter
+                translates into Debug Adapter Protocol events for the editor or tool to consume.
+
+                \begin{figure}[hbt!]
                     \centering
                     \copyrightbox[r]{
-                        \includegraphics[scale=0.4]{dapflow.png}
-                    }{\tiny\textcopyright{Microsoft Corporation. https://microsoft.github.io/debug-adapter-protocol/overview}}
-                    \caption{The diagram illustrates the order of events and requests communicated between the a tool such as Visual Studio Code, a Debug Adapter and the Debugger Runtime that the Debug Adapter wraps.}
-                    \label{fig:dapflow}
+                        \includegraphics[scale=0.35]{debug-arch.png}
+                    }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
+                    \caption{Diagram displaying the relationship between Editors and Tools, the Debug Adapter Protocol, Debug Adapters and the possible Debug Runtimes. Not shown are the
+                        editor/tool dependent shims. Each \textit{Development Tool} contains a debugging utility that speaks the Debug Adapter Protocol to communicate with various Debug
+                        Adapters.}
+                    \label{fig:debug-arch}
                 \end{figure}
+
+            \subsection{Concept}
+                Conceptually, the role of the debug adapter created for this project is simple: given a trace ID, it should fetch the spans and their metadata for the trace ID, load the 
+                source code files for each span and allow the user to step through the code on a span-by-span basis (or more granular). If successful, the user would be able to see the
+                source code file and line in which the current span was started and step back and forth between spans and their respective source code files and lines. Given the focus
+                around non-monorepo codebases, it should also have the ability to jump to and from files outside the currently opened codebase, assuming that the codebases for the other 
+                services also reside on the user's machine.
                 
-                When the debug adapter receives a request from Visual Studio Code to perform a certain operation such as step forward or backwards, it invokes the relevant method on the debugger runtime and sends a \texttt{success} response back
-                to Visual Studio Code if the method call was successful. The debugger runtime in turn can notify the debug adapter of specific events that it emits after a method was called on it such as when it halts on a line, when it terminates 
-                etc. The debug adapter then creates the associated Debug Adapter Protocol event type and sends said event to Visual Studio Code to handle.
+                The main approach to making this set of requirements possible is by utilizing the tag constructs defined in the OpenTracing specification to carry additional runtime or
+                compile time information that provides enough information to the debugger runtime. This can be done by implementing shims that wrap OpenTracing trace implementations with
+                methods that add the required information as tags to newly created span instances. When the debugger runtime queries the backend API, it can request an additional field on
+                the span types that the backend GraphQL resolver resolves by transforming the information gathered by the shims into a format more useful to the debugger runtime than the
+                raw collected information. This results in being able to interface with the same GraphQL query as the project idea that follows this part, while not incurring the 
+                transformation costs in the following idea.
 
-                \newpage
-                Execution of the debugger runtime at a high-level involves only a small number of basic operations. The majority of the complexity comes about from the bookkeeping of a number of values and how they change as the user steps 
-                through code of numerous files throughout their machine; a mapping of service names to local filesystem paths that is updated as new services are encountered while stepping through files, persisting new values as they are input
-                by the user; a set of append-only arrays that are initialised from the stack frames of the first span when the debugger runtime starts execution; and a single integer variable that keeps track of where in these arrays the debugger
-                runtime is currently halted on. The append-only arrays consist of: an array of filepaths which are resolved to their local path on the user's machine, an array of stack frames and an array of span index numbers that associate a stack 
-                frame in the previous array with the index of the span in the list of spans the trace holds that the stack frame was associated with. As these three arrays are always the same length, the array-tracking index variable gives convenient
-                access to the currently active stack frame, span and file path. This allows for the ability to step forwards as well as backwards through the stack frames, while always having the relevant span and file info available, greatly 
-                simplifying the process of displaying the tags of the currently active span.
+                In practice, there are a number of challenges that arise in various parts of this concept; gathering the information required to pinpoint the source file and line varies 
+                in format across different programming languages, amount of stack trace information that is to be or that can be gathered and its formats across different programming 
+                languages, mapping different services to the location in the filesystem of their codebase as well as handling spans emitted from services not appropriately instrumented 
+                for this to work. There are different trade-offs with various approaches to these problems that will be outlined.
+
+            \subsection{Collecting and Parsing Runtime Data}
+            \label{sec:collecting}
+                When dealing with collecting information on the source file and line number at which a span was started, there are two main approaches with highly contrasting pros and cons.
+                The first approach is to simply query the runtime, where applicable, for the file path and line number associated with the function that invoked the span creation. This is often
+                a relatively cheap operation, with a small footprint in the amount of data that a span is tagged with. The main downside of this approach is that while it results in a small 
+                amount of extra data attached to a span, this reduced amount of information reduces the capabilities of the debugger runtime. With this information, the debugger runtime is
+                limited to jumping between those single, individual points in the code at which the spans are created (this could be expanded to also wrap the log-point calls to do the same).
                 
-                On each step-forward request, the debugger runtime checks if the next span's data must be loaded into the append-only arrays by checking if the array-tracking index has reached the end of the arrays, loading data the same way
-                as the first span was, as mentioned previously. Span and stack frame data is lazily loaded in this manner until all span and stack frame data has been loaded into the arrays, ensuring that user input that may be necessary to resolve
-                some filepaths is not requested upfront for every stack frame stored in the spans of a trace. Once the list of spans has been exhausted, the user is simply informed of such in a notification. For step-back requests, the process is
-                considerably simpler. As the data is already loaded, there is no need to load anything additionally. The array-tracking index is decremented instead of incremented, until such point as it hits zero when the first stack frame from the
-                first span has been reached.
+                The second approach involves querying the runtime for an entire stacktrace leading up to this point. With this approach, there is considerably more data, with all the function
+                calls of the stack frame tree branch leading up to the span creation being gathered, allowing for the possibility to step back and forth at the function level rather than simply
+                at the span level. In both these instances, the data is attached to spans as tags. This approach was chosen to be explored for the project due to the larger potential that accompanies
+                the greater amount of data. For further processing outlined in the following paragraph, the programming language from which the span originates is added as a tag to the span.
+                There are a few downsides to this approach and possible workarounds that will also be discussed.
+                
+                In many language implementations of the Jaeger tracer, tag values are limited in length to either 256 or 1024 characters. When dealing with stacktraces, this limit is too 
+                restrictive for storing entire stacktraces. This is due to an outstanding issue in Jaeger client implementations when using UDP as the transport protocol, as span sizes
+                would exceed the maximum UDP packet size of 65535 bytes\cite{udptagsize}. This makes using HTTP as the span transport method an almost hard requirement to avoid UDP packets being
+                dropped in situations where the size of the stacktrace combined with other span data exceeds the max UDP packet size, causing entire spans to be lost. The client implementations also
+                provide an interface for changing the max tag value length, which must be utilised to prevent the truncating of the stacktraces. As this number cannot be set on a per-span basis, 
+                it must be set at a reasonably large number ahead of time based on previous examples of possible stacktrace sizes or the maximum value of an integer for the given platform. Another 
+                downside to full stacktraces is that the procedure for getting an entire stacktrace and transforming them can often be considerably more expensive than adding simple tags to a span. 
+                Unfortunately, sampling rules in the Jaeger client implementations, the processes by which it is decided whether or not spans are exported, are only applied to log points and the final 
+                reporting of spans. This results in the potentially expensive operation of gathering stacktraces to be run even if the span will never be reported. Despite implementing head-based sampling, 
+                where it is know when the root span is created whether or not the trace will be reported, the API does not expose an interface for querying this fact. For this reason, it was important to 
+                make the operation as cheap as possible, leaving as much of the stacktrace transformations as possible to query time, when the debugger runtime requests a trace from the backend. Alternatively,
+                an additional sampling decision could be made, independent from the sampling decision made by the tracer regarding recording the span, to decide whether the trace should be a candidate for
+                collecting runtime data. This was not explored as part of this project due to time constraints, more discussion surrounding this can be found in \textbf{Future Work} section.
 
-                As the debugger runtime steps through each stack frame one by one, it notifies the debug adapter to emit a \textit{Stopped} event for each one. This indicates that the debugger runtime has stopped execution, with an accompanying reason 
-                as an attribute on the event that can be of a value such as "step", "breakpoint", "exception" etc. In this case, only the "step" reason is used, as the debugger runtime stops walking the stack frames on every individual step. Every time
-                this event is received by Visual Studio Code, a number of requests are made to the debug adapter: a \textit{Threads} request that fetches a list of threads that exist at this point in time, a \textit{StackTrace} request that returns
-                a stacktrace for the given thread identifier that is associated with a \textit{Stopped} event, a \textit{Scopes} request that fetches the set of variable scopes such as global and local scopes in the case of more traditional debugger
-                environments, and finally a \textit{Variables} request for every scope defined in the previous request. Of particular interest are the \textit{Scopes} and \textit{Variables} requests. Through these request, it is possible to provide a 
-                set of variables to be displayed in the debugger UI, grouped by a defined scope. In the context of distributed tracing, with Jaeger in particular, there are three notable groups of data that can be easily transformed into the role of
-                variable scopes; the span tags, the process tags (tags assigned to a particular tracer) and baggage items (data that is carried across process boundaries in the span context). These can each be defined as a debug adapter protocol scope,
-                and the set of values in each can become the set of debug adapter protocol variables for each. Figure~\ref{fig:scopes} shows an example of how this would look in the Visual Studio Code debugger UI, with the three scopes being expandable
-                to display the set of variables for each. 
+            \subsection{Interfacing GraphQL API with Debug Adapter}
+                With the stacktrace stored in the database as a span tag in string format, the backend GraphQL schema is amended by adding a field to the span type with an associated resolver and 
+                types that define a stacktrace and its individual stack frames. This resolver reads the stored stacktrace and the programming language associated with the span to process it into a 
+                stacktrace object usable for the debugger runtime. As each language has a different format for its stacktraces, a stacktrace parser must be created for each language supported. These
+                will parse the raw stacktrace strings and returns them as a parsed and formatted stacktrace object to the GraphQL resolver. Listing~\ref{lst:stack} shows the updated GraphQL schema
+                with the unchanged sections filtered out. 
 
-                \bigskip
-                \begin{figure}[htb!]
-                    \centering
-                    \includegraphics[scale=1.7]{scopes.png}
-                    \caption{The Variables view in the Visual Studio Code debugger UI, displaying three named variable scopes with expandable menus to show or hide the variables
-                    in each scope.}
-                    \label{fig:scopes}
-                \end{figure}
+            \smallskip
+            \begin{lstlisting}[caption={GraphQL schema updated with stack- trace and frame objects. Unchanged fields and objects filtered. The \texttt{shouldReslolve} field indicates
+                whether a file path requires additional resolving in the debugger runtime.}, language=GraphQL, gobble=16, label={lst:stack}]
+                type Span {
+                    // ...
+                    stacktrace: StackTrace
+                }
 
-                In a similar fashion, the \textit{StackTrace} request can be used to show a list of stack frames leading up to the current active stack frame in a separate panel in the Visual Studio Code debugger UI. While the extent of 
-                features available from this representation is dependent on the editor or tool in question, in the context of Visual Studio Code, it allows for users to click on individual stack frames and be immediately transported 
-                to the source file and line associated with the clicked stack frame, without losing sight the current active stack frame, being able to trivially return to it by clicking on it in the UI. Figure~\ref{fig:stacks} shows a 
-                sample of how this would look in Visual Studio Code, with information displayed such as the service, span name, source file and line for each stack frame.
+                // ...
 
-                \begin{figure}[htb!]
-                    \centering
-                    \includegraphics[scale=1.6]{vscodestack.png}
-                    \caption{The visualisation of stack frames in the Visual Studio Code debugger UI panel, displaying various information such as the service name, operation/span
-                    name as well as source file information for each stack frame, displayed in a top-down manner.}
-                    \label{fig:stacks}
-                \end{figure}
+                type StackTrace {
+                    stackFrames: [StackFrame!]!
+                }
 
-                \newpage
+                type StackFrame {
+                    packageName: String
+                    filename: String!
+                    line: Int!
+                    shouldResolve: Boolean!
+                }
+            \end{lstlisting}
+            \medskip
+
+            In this format, the debugger runtime has a more language agnostic representation of the stacktraces collected over the lifetime of a trace. There are still differences
+            in how absolute local paths are resolved from this information in order to load the correct file in the editor from the users local filesystem, from differences in how
+            codebases are structured into different packages for encapsulation and modularisation, as well as where dependencies are stored in the filesystem. For simplicity, 
+            resolving dependencies was not included in this project outside of the standard library for languages where implementation was trivial.
+
+            Alongside showing a stacktrace and the line in the file where the current span was created (or in the case of traditional debuggers, the line it has halted execution on),
+            editors often have a panel dedicated for displaying local and global variables for the current stack frame and execution context. Largely due to performance reasons, it is
+            not possible to attain this level of information on local and global variables when in the distributed tracing context unlike when using a halting debugger, assuming that 
+            \textit{DWARF} symbols (\textit{Debugging With Arbitrary Record Formats}, a standardized debugging data format embedded in executable binaries)\cite{dwarf} are still baked 
+            into the binary, which may not always be the case, as it is not uncommon for binaries to be stripped of DWARF symbols to reduce their size. Instead of this, the different types off
+            tags and other key-value pairs can be displayed in said panel in place of variables. This works best when traces are heavily tagged with rich, high cardinality metadata which gives 
+            greater insight into a service's behaviour, both through the debugger interface and other means, and larger dimensionality with which to reduce a set of traces down to those with 
+            a common set of tags that exhibit certain behaviour.
+            % TODO: is this the right place for that last line? why else would we want high cardinality 
+
+        \section{Service Topology View}
+            In the service topology part of the project, the aim is to explore how to increase the value derivable from graph representations of the topology of a service architecture, at 
+            both an individual trace level and in aggregate. A common visualisation in many vendors in basic formats, they are commonly based on a type of directed graph called a 
+            \textit{force-directed graph} due to its aesthetically pleasing properties. In the following section, the two main classes of service topology visualisations will be introduced,
+            monitoring oriented and metrics based visualisation as well as observability oriented and event based visualisations, with the differences between the two being highlighted with an 
+            emphasis on the need for the latter type.
+    
+            A basic service topology graph can give a quick overview of the dependencies between different services in a distributed system. However, it provides little value as an observability tool
+            for debugging production issues or finding internal services that are returning errors for certain customers. For developers and administrators to derive tangible value from such a 
+            visualisation, there is a need for a more dynamic system. The ability to generate views based on arbitrary attributes would allow for users of the system to create more personalized and 
+            focused graphs based on their needs, such as grouping by high cardinality fields like end-user IP address, user identifiers as well as metrics such as error rates, response times 
+            etc\cite{doingitwrongtopo}.
+
+            While they are commonly found in distributed tracing vendor services, the implementations are often very simplistic. A common example of such an implementation begins with a basic, often directed
+            graph of each service as defined by the service name metadata passed into a tracer implementation. From this, the relationships between graph nodes is drawn by querying a spans service name
+            and that of its parent span, which gives both the relationship and the directionality of said relationship. Nodes and edges are then often annotated with various metrics derived from the various
+            span fields and tags, with average or percentiles of span durations as well as error rates and number of requests per unit of time being the standard figures on display. Figure~\ref{fig:risingstacktopo}
+            is an example of such an implementation from The RisingStack's NodeJS monitoring platform. Often misrepresented as features of \textit{observability} platforms or services, graphs of such kind are
+            more aptly described as features of \textit{monitoring} platforms or services. The line between the two terms is often intentionally blurred by vendors which provide monitoring services looking to sell
+            to companies who are in need of observability services. Monitoring is commonly described as being how \textbf{known-unknowns} are handled, including defining thresholds for values on metrics such as
+            error rates or response times, most commonly working with pre-aggregated data of low dimensionality to give a quick, overview of the system in aggregate. Such systems are ideally tailored towards 
+            answering the questions one knows to ask beforehand, hence known-unknowns, which can range from questions such as does the database server require more CPU power or if a recent deployment of a service
+            was correlated with an increase in API errors. 
+
+            \begin{figure}[hbt!]
+                \centering
+                \copyrightbox[r]{
+                    \includegraphics[scale=0.14]{service-topo-risingstack.png}
+                }{\tiny\textcopyright{Gergely Nemeth on The RisingStack blog. https://blog.risingstack.com/distributed-transaction-tracing-microservices-monitoring/}}
+                \caption{Example of the Microservices Topology visualisation from RisingStack's monitoring platform, showing a basic topology overview with key metrics based on traces.}
+                \label{fig:risingstacktopo}
+            \end{figure}
+
+            In contrast, observability is all about the \textbf{unknown-unknowns}, being able to ask different, unforeseen questions to a highly dimensional dataset with high cardinality fields that allow
+            for arbitrary operations on raw, non-aggregated events, with the ability to drill down on individual events in the set from an aggregate overview. This allows one to receive answers to the questions 
+            on the behaviour of a system, in arbitrary aggregate down to an individual level. This sets the tone for what an advanced service topology visualisation should provide to allow for it to be distinguished 
+            from standard monitoring alternatives. Building off an event-based, non-aggregated dataset, the service topology graph will start out in a similar fashion to the aforementioned metrics based implementations,
+            however in contrast deriving metrics at query time from the events. This will serve as the foundation from which additional operations and features will build off.
+
+            \subsection{Filtering}
+                The first vital operation that this visualisation should have is the ability to filter out traces from the working dataset arbitrarily. This allows us to reduce the amount of noise affecting the metrics
+                on display at the edges and nodes, giving users the metrics specific to the new, filtered dataset view. As the user filters on various fields of arbitrary cardinality such as specific error codes,
+                company identifiers or even performs filter operations on derived metrics such as the requests to a service with response times above a certain threshold, the metrics displayed on the graph such as HTTP error codes, 
+                response times etc that are displayed in the graph update dynamically to reflect the new working set consisting of the filtered entries from the original dataset, allowing for questions such as "\textit{Is a particular 
+                error associated with any particular service or node?}" or "\textit{What proportion of companies from a certain state with a certain cookie set are experiencing slow response times?}" to be asked without having 
+                instrumented for those particular questions, while being visualised in a service centric style.
+
+            \subsection{Grouping}
+                Grouping of data by an arbitrary field is the next operation that provides high value. This operation is a powerful method by which users can discover common traits of events exhibiting certain behaviour as well as the
+                distribution of errors or other field values across events. By virtue of the form of the visualisation, groupings of event objects are displayed inherently by service identifier/name. This trait extends to grouping by
+                additional fields, resulting in groupings always being in conjunction with service identifiers. The outcome of this is a topology view with a node for every service identifier/grouped field value combination. 
+                
+                As an example, assume a small scale service topology of 5 services for a business with 10 customers. The services consist of a database, an API gateway and three internal services. A user sees that the 99th percentile response
+                time between two services, A and B, is abnormally high. To see if this problem is isolated to a specific customer or if it is happening to everyone, they could perform a group operation on the customer identifier. The topology 
+                graph updates, with every service node being multiplied by ten in count e.g. ten nodes for service A, with combinations ranging from \{service name: A, customer ID: 0\} to \{service name: A, customer ID: 9\} and so on, along
+                with the accompanying edges and metrics for each combination. With the response times now separated by customer identifier, the user can see the distribution of the high response times, whether or not it was isolated to 
+                specific customers or not.
+
+                For the trivial example given, the graph already expands from five nodes to 50 nodes after grouping by customer identifier. For a company with more customers, this would become unwieldy in size and should therefore be used in 
+                conjunction with the aforementioned filtering capabilities to bring the graph down to a manageable size by excluding grouping combinations where the key metrics are not above or below a defined threshold or where a field does not
+                match a given predicate.
+                
+                These capabilities can also be expanded to reduce noise in the case of high cardinality service identifiers e.g. if using a serverless platform such as AWS Lambda in which each serverless function invocation may have a locally
+                unique identifier with a common prefix, the service topology graph may explode with a large number of one-time nodes. A form of conditional grouping, such as grouping all nodes where the service identifier begins with a given prefix, 
+                could vastly reduce the noise from a graph featuring many nodes from ephemeral services as with serverless platforms or in companies with high deployment frequencies where service identifiers are uniquely suffixed on every deployment.
+              
+        \newpage
+        \section{Summary}
+            The decisions made in this section play a vital role in how the project is implemented. The distributed tracing API chosen, OpenTracing, influences the capabilities made available in areas such as the possible features 
+            through it as well as potential performance tuning while the choice of the distributed tracing platform, Jaeger, and by extension the OpenTracing client implementations, dictate where data is fetched from and transformed
+            by the backend API. While improvements to the service topology view visualisation were discussed in this chapter, in the next chapter the development and implementation of the backend API and the debug adapter will be 
+            discussed in detail, building upon the designs described in this chapter.
+
+    \chapter{Implementation}
+        In Chapter~{\ref{sec:design}}, the designs that form the base of how the project would be implemented were set out. In this chapter, the detailed technical aspects will be covered, including the features and their implementations
+        of the Debug Adapter, the technical challenges encountered and the solutions devised in collecting runtime data for the Debug Adapter in a number of programming languages as well as a detailed analysis of the different stacktrace 
+        parsers implemented in the backend API server and the challenges that arose in the implementation of it.
+
+        \section{Debug Adapter}
+        \label{sec:impldebug}
+            The debugger implementation consists of a number of components that together form a whole package that can be used to extend the Visual Studio Code editor to provide users with the ability
+            to step through code of the different codebases residing on the users machine that together make up a distributed system. The main implementation details such as interfacing with the backend
+            server outlined in Section~\ref{sec:backend}, how the data is consumed and presented to the user will be discussed in this section.
+
+            As both the Debug Adapter Protocol, Visual Studio Code and TypeScript are all maintained by Microsoft, and given that Visual Studio Code is built on TypeScript with comprehensive support for the language
+            in developing extensions for it, TypeScript was the obvious choice to implement this project in. Microsoft provide a sample Github repository containing a mock debugger runtime, Visual Studio Code extension
+            and debug adapter. As it contains the necessary boilerplate code from which a fully-fledged debugger runtime and debug adapter can be made, it served as the base for this project.
+
+            The debugger is composed primarily of three parts: the extension that Visual Studio Code loads, the debug adapter that the extension initialises and informs Visual Studio Code about, and the debugger runtime
+            that consumes distributed tracing data from the GraphQL server and for which the debug adapter acts as a bridge so that Visual Studio Code can communicate with it. With reference to Figure~\ref{fig:vscodedebug},
+            the \textit{Debug Extension} is the metadata that defines the extension that Visual Studio Code consumes, which can be found in the \texttt{package.json} manifest file. This includes the entrypoint JavaScript file 
+            that starts the extension, what it contributes as an extension (in this case, a debugger) amongst other metadata. Following on from this, the \textit{Extension Code} includes the entrypoint defined in the 
+            aforementioned metadata, and handles the activation, deactivation and the registering of its capabilities through the \textit{Extension API}. One such capability that can be registered is a \textit{Debug Adapter 
+            Descriptor Factory}. From this factory, a debug adapter can be activated and the information required for Visual Studio Code to interact with the debug adapter, the \textit{Descriptor} part of the previous term, 
+            is consumed by Visual Studio Code. This allows Visual Studio Code to interact with the \textit{Debug Adapter} directly over the \textit{Debug Adapter Protocol}, communicating with the \textit{Debugger} through the 
+            Debug Adapter.
+
+            \begin{figure}[hbt!]
+                \centering
+                \copyrightbox[r]{
+                    \includegraphics[scale=0.35]{vscodeadapter.png}
+                    }{\tiny{\textcopyright{Microsoft Corporation. https://vscode.readthedocs.io/en/latest/extensions/example-debuggers/}}}
+                \caption{The relationships between the different components in allowing Visual Studio Code to interact with arbitrary debuggers through a common protocol.}
+                \label{fig:vscodedebug}
+            \end{figure}
+
+            Visual Studio Code provides two main types of Debug Adapter Descriptors that define how the debug adapter is run and interacted with: a socket based server or an executable. As this debug extension is wholly self contained, 
+            (all three components, the extension, debug adapter and debugger runtime, are part of a single NodeJS compilation unit) the descriptor type chosen was the socket based server. Upon initialisation, a socket based server is 
+            created that creates an instance of the debug adapter class when a connection is made. Once the socket is ready to accept connections, Visual Studio Code is informed of the port that it is listening to, so that Visual Studio 
+            Code may interact with it. Listing~\ref{lst:descriptor} highlights the basic code required for declaring a method for creating a socket-based debug adapter descriptor. An instance of the \texttt{AdapterDescriptorFactory} class 
+            is registered with Visual Studio Code by the extension under a given name. This instructs Visual Studio Code on which debug adapter descriptor factory to invoke the \texttt{createDebugAdapterDescriptor} method on in order to 
+            initialise a debug adapter instance to communicate with.
+
+            \begin{spacing}{1.0}
+                \begin{lstlisting}[label={lst:descriptor}, gobble=20, language=TypeScript, caption={The method used to initialise the Debug Adapter and return the Debug Adapter Descriptor to Visual Studio Code.}]
+                    class AdapterDescriptorFactory implements DebugAdapterDescriptorFactory {
+                        createDebugAdapterDescriptor(
+                            session: DebugSession,
+                            executable: DebugAdapterExecutable | undefined
+                        ): ProviderResult<DebugAdapterDescriptor> {
+                            const server = Net.createServer(socket => {
+                                const debugAdapter = new DebugAdapter()
+                                debugAdapter.setRunAsServer(true)
+                                debugAdapter.start(socket, socket)
+                            }).listen(0)
+
+                            return new vscode.DebugAdapterServer(
+                                (this.server.address() as Net.AddressInfo).port
+                            )
+                        }
+                    }
+                \end{lstlisting}
+            \end{spacing}
+            \bigskip
+
+            The debug adapter and debugger runtime communicate in an asynchronous fashion through regular method invocations. Upon initialisation, the debug adapter also initialises an instance of the debugger runtime, adds an event handler 
+            on it to listen for emitted events from the debugger runtime and saves a reference to the initialised object. The debug adapter is then ready to receive events from Visual Studio Code, upon which it receives the \textit{Initialize}
+            request, in which the client (Visual Studio Code in this instance) and debug adapter inform each other of their capabilities according to the debug adapter protocol specification, the \textit{Configuration Done} request, which informs 
+            the debug adapter that the client has finished initialisation, and finally the \textit{Launch} request. For a visual representation of a more exhaustive flow given a richer set of capabilities announced by the debug adapter than were
+            included in the scope of implementing this final year project, see Figure~\ref{fig:dapflow}, with the full specification and overview available online at \url{https://microsoft.github.io/debug-adapter-protocol/specification}.
+            
+            \begin{figure}[htb!]
+                \centering
+                \copyrightbox[r]{
+                    \includegraphics[scale=0.35]{dapflow.png}
+                }{\tiny\textcopyright{Microsoft Corporation. https://microsoft.github.io/debug-adapter-protocol/overview}}
+                \caption{The diagram illustrates the order of events and requests communicated between the a tool such as Visual Studio Code, a Debug Adapter and the Debugger Runtime that the Debug Adapter wraps.}
+                \label{fig:dapflow}
+            \end{figure}
+            
+            When the debug adapter receives a request from Visual Studio Code to perform a certain operation such as step forward or backwards, it invokes the relevant method on the debugger runtime and sends a \texttt{success} response back
+            to Visual Studio Code if the method call was successful. The debugger runtime in turn can notify the debug adapter of specific events that it emits after a method was called on it such as when it halts on a line, when it terminates 
+            etc. The debug adapter then creates the associated Debug Adapter Protocol event type and sends said event to Visual Studio Code to handle.
+
+            Execution of the debugger runtime at a high-level involves only a small number of basic operations. The majority of the complexity comes about from the bookkeeping of a number of values and how they change as the user steps 
+            through code of numerous files throughout their machine; a mapping of service names to local filesystem paths that is updated as new services are encountered while stepping through files, persisting new values as they are input
+            by the user; a set of append-only arrays that are initialised from the stack frames of the first span when the debugger runtime starts execution; and a single integer variable that keeps track of where in these arrays the debugger
+            runtime is currently halted on. The append-only arrays consist of: an array of filepaths which are resolved to their local path on the user's machine, an array of stack frames and an array of span index numbers that associate a stack 
+            frame in the previous array with the index of the span in the list of spans the trace holds that the stack frame was associated with. As these three arrays are always the same length, the array-tracking index variable gives convenient
+            access to the currently active stack frame, span and file path. This allows for the ability to step forwards as well as backwards through the stack frames, while always having the relevant span and file info available, greatly 
+            simplifying the process of displaying the tags of the currently active span.
+            
+            On each step-forward request, the debugger runtime checks if the next span's data must be loaded into the append-only arrays by checking if the array-tracking index has reached the end of the arrays, loading data the same way
+            as the first span was, as mentioned previously. Span and stack frame data is lazily loaded in this manner until all span and stack frame data has been loaded into the arrays, ensuring that user input that may be necessary to resolve
+            some filepaths is not requested upfront for every stack frame stored in the spans of a trace. Once the list of spans has been exhausted, the user is simply informed of such in a notification. For step-back requests, the process is
+            considerably simpler. As the data is already loaded, there is no need to load anything additionally. The array-tracking index is decremented instead of incremented, until such point as it hits zero when the first stack frame from the
+            first span has been reached.
+
+            As the debugger runtime steps through each stack frame one by one, it notifies the debug adapter to emit a \textit{Stopped} event for each one. This indicates that the debugger runtime has stopped execution, with an accompanying reason 
+            as an attribute on the event that can be of a value such as "step", "breakpoint", "exception" etc. In this case, only the "step" reason is used, as the debugger runtime stops walking the stack frames on every individual step. Every time
+            this event is received by Visual Studio Code, a number of requests are made to the debug adapter: a \textit{Threads} request that fetches a list of threads that exist at this point in time, a \textit{StackTrace} request that returns
+            a stacktrace for the given thread identifier that is associated with a \textit{Stopped} event, a \textit{Scopes} request that fetches the set of variable scopes such as global and local scopes in the case of more traditional debugger
+            environments, and finally a \textit{Variables} request for every scope defined in the previous request. Of particular interest are the \textit{Scopes} and \textit{Variables} requests. Through these request, it is possible to provide a 
+            set of variables to be displayed in the debugger UI, grouped by a defined scope. In the context of distributed tracing, with Jaeger in particular, there are three notable groups of data that can be easily transformed into the role of
+            variable scopes; the span tags, the process tags (tags assigned to a particular tracer) and baggage items (data that is carried across process boundaries in the span context). These can each be defined as a debug adapter protocol scope,
+            and the set of values in each can become the set of debug adapter protocol variables for each. Figure~\ref{fig:scopes} shows an example of how this would look in the Visual Studio Code debugger UI, with the three scopes being expandable
+            to display the set of variables for each. 
+
+            \begin{figure}[htb!]
+                \centering
+                \includegraphics[scale=1.7]{scopes.png}
+                \caption{The Variables view in the Visual Studio Code debugger UI, displaying three named variable scopes with expandable menus to show or hide the variables
+                in each scope.}
+                \label{fig:scopes}
+            \end{figure}
+
+            In a similar fashion, the \textit{StackTrace} request can be used to show a list of stack frames leading up to the current active stack frame in a separate panel in the Visual Studio Code debugger UI. While the extent of 
+            features available from this representation is dependent on the editor or tool in question, in the context of Visual Studio Code, it allows for users to click on individual stack frames and be immediately transported 
+            to the source file and line associated with the clicked stack frame, without losing sight the current active stack frame, being able to trivially return to it by clicking on it in the UI. Figure~\ref{fig:stacks} shows a 
+            sample of how this would look in Visual Studio Code, with information displayed such as the service, span name, source file and line for each stack frame.
+
+            \bigskip
+            \begin{figure}[htb!]
+                \centering
+                \includegraphics[scale=1.6]{vscodestack.png}
+                \caption{The visualisation of stack frames in the Visual Studio Code debugger UI panel, displaying information such as the service and operation name as well as source files information.}
+                \label{fig:stacks}
+            \end{figure}
+
+            \newpage
+            \subsection{Recap}
                 The Debug Adapter Protocol provides a rich specification for providing debugger runtime agnostic debugging capabilities that allows for a comprehensive set of features to be implemented in a vast range of environments.
                 It was fundamental in allowing for highly multi-editor compatible debug adapter and debugger runtime implementations that utilise OpenTracing distributed tracing data to provide a debugging experience that feels similar
                 to using a traditional debugger such as gdb or delve in a non-blocking manner. However, the data required to provide such capabilities must be generated and collected at runtime by the individual services. The next section
                 will describe how this was implemented for the programming languages implemented, as well as attempts made during development that fell short of providing an optimal solution.
 
-                % baggage, tags, process tags, libraries, 
+            % baggage, tags, process tags, libraries, 
 
-            \subsection{OpenTracing Tracer Shims}
-                As the debugger runtime and backend API server rely on runtime stacktrace information in order to step through stack frames for each span in a trace, the instrumented services need to be able
-                to collect that information as well as any other information required for operations such as dependency path resolution and transport it to the trace collector as part of the span tags.
-                To achieve this, a lightweight shim that implements the OpenTracing tracer API was implemented for every language supported. A number of languages were originally considered and then narrowed
-                down to a set that were found to be viably implemented. Originally considered were: NodeJS with which comes support for TypeScript, JavaScript, CoffeeScript and other languages that compile
-                down to JavaScript, Go, the JVM including Java and Kotlin, Python and Rust. This was narrowed down to NodeJS, Go and the JVM.
+        \section{OpenTracing Tracer Shims}
+            As the debugger runtime and backend API server rely on runtime stacktrace information in order to step through stack frames for each span in a trace, the instrumented services need to be able
+            to collect that information as well as any other information required for operations such as dependency path resolution and transport it to the trace collector as part of the span tags.
+            To achieve this, a lightweight shim that implements the OpenTracing tracer API was implemented for every language supported. A number of languages were originally considered and then narrowed
+            down to a set that were found to be viably implemented. Originally considered were: NodeJS with which comes support for TypeScript, JavaScript, CoffeeScript and other languages that compile
+            down to JavaScript, Go, the Java Virtual Machine (JVM) including Java and Kotlin, Python and Rust. This was narrowed down to NodeJS, Go and the JVM.
 
-                \subsubsection{NodeJS Tracer Shim}
-                    The NodeJS OpenTracing tracer shim implementation was made simple by the constructs made available by the NodeJS runtime to gather much of the required information easily. As each \texttt{Error} 
-                    instance has a stacktrace attached with it, gathering a stacktrace is as simple as referencing the \texttt{stack} attribute. By default however, the stacktrace is limited to ~10 entries. This is
-                    easily remediated, by setting the \texttt{stackTraceLimit} static attribute on the \texttt{Error} class to \texttt{Infinity}, ensuring the full stack trace possible.
+            \subsection{NodeJS Tracer Shim}
+                The NodeJS OpenTracing tracer shim implementation was made simple by the constructs made available by the NodeJS runtime to gather much of the required information easily. As each \texttt{Error} 
+                instance has a stacktrace attached with it, gathering a stacktrace is as simple as referencing the \texttt{stack} attribute. By default however, the stacktrace is limited to ~10 entries. This is
+                easily remediated, by setting the \texttt{stackTraceLimit} static attribute on the \texttt{Error} class to \texttt{Infinity}, ensuring the full stack trace possible.
 
-                    However, there were some scenarios in which the full stacktrace would not be captured. Due to how NodeJS handles asynchronous execution of functions\cite{asyncnostack}, there are scenarios in which
-                    the stacktrace context is lost. While there have been solutions released to try alleviate this issue, including natively in the NodeJS runtime\cite{asyncstack}, there still remains scenarios in which
-                    the stacktrace is substantially smaller with much context lost. The \textit{trace}\cite{longtrace} NodeJS package was discovered that showed good results in the sample NodeJS microservice codebase, and was
-                    integrated into the shim thereafter.
+                However, there were some scenarios in which the full stacktrace would not be captured. Due to how NodeJS handles asynchronous execution of functions\cite{asyncnostack}, there are scenarios in which
+                the stacktrace context is lost. While there have been solutions released to try alleviate this issue, including natively in the NodeJS runtime\cite{asyncstack}, there still remains scenarios in which
+                the stacktrace is substantially smaller with much context lost. The \textit{trace}\cite{longtrace} NodeJS package was discovered that showed good results in the sample NodeJS microservice codebase, and was
+                integrated into the shim thereafter.
 
-                    Figure~\ref{fig:nodejsstack} illustrates an example of a NodeJS stacktrace as it is stored in the database. Of note is the absolute filepath on every line. As the filepath associated with a stack
-                    frame is vital, it is necessary to derive the paths relative to the path of the main module so that it can be resolved properly to the location of the file on the end user's machine. For this, the 
-                    shim queries the NodeJS runtime for the filepath of the entrypoint script and deriving the directory it is contained in via the following snippet: \texttt{require('path').dirname(require.main.filename)}.
+                Figure~\ref{fig:nodejsstack} illustrates an example of a NodeJS stacktrace as it is stored in the database. Of note is the absolute filepath on every line. As the filepath associated with a stack
+                frame is vital, it is necessary to derive the paths relative to the path of the main module so that it can be resolved properly to the location of the file on the end user's machine. For this, the 
+                shim queries the NodeJS runtime for the filepath of the entrypoint script and deriving the directory it is contained in via the following snippet: \texttt{require('path').dirname(require.main.filename)}.
 
-                    As JavaScript is increasingly not being used directly by developers, but rather through languages such as TypeScript, CoffeeScript, Elm and other programming languages that transpile to JavaScript,
-                    as well as the fact that JavaScript is commonly transformed and minified for more efficient browser delivery, the concept of \textit{source mapping} was created to map stacktrace information
-                    from the transformed sources to the original source code. While NodeJS supports displaying associated source mappings alongside the transformed source filepaths in stacktraces\cite{sourcemap},
-                    the \textit{source-map-support}\cite{sourcemapsupport} NodeJS package takes this further by replacing the transformed source filepaths with the original source mapping filepaths, "making every 
-                    compile-to-JS language more of a first-class citizen", making first-class citizens of languages that compile to JavaScript in the stacktraces simplifies the processing needed on the backend, 
-                    outlined in Section~\ref{sec:backend}.
+                As JavaScript is increasingly not being used directly by developers, but rather through languages such as TypeScript, CoffeeScript, Elm and other programming languages that transpile to JavaScript,
+                as well as the fact that JavaScript is commonly transformed and minified for more efficient browser delivery, the concept of \textit{source mapping} was created to map stacktrace information
+                from the transformed sources to the original source code. While NodeJS supports displaying associated source mappings alongside the transformed source filepaths in stacktraces\cite{sourcemap},
+                the \textit{source-map-support}\cite{sourcemapsupport} NodeJS package takes this further by replacing the transformed source filepaths with the original source mapping filepaths, "making every 
+                compile-to-JS language more of a first-class citizen", making first-class citizens of languages that compile to JavaScript in the stacktraces simplifies the processing needed on the backend, 
+                outlined in Section~\ref{sec:backend}.
 
-                    \begin{figure}[hbt!]
-                        \centering
-                        \includegraphics[scale=1.7]{nodejsstack.png}
-                        \caption{NodeJS stacktrace collected in a HTTP handler on processing an incoming request with the Express HTTP framework for JavaScript.}
-                        \label{fig:nodejsstack}
-                    \end{figure}
+                \begin{figure}[hbt!]
+                    \centering
+                    \includegraphics[scale=1.8]{nodejsstack.png}
+                    \caption{NodeJS stacktrace collected in a HTTP handler on processing an incoming request with the Express HTTP framework for JavaScript.}
+                    \label{fig:nodejsstack}
+                \end{figure}
 
-                    In whole, the NodeJS shim attaches three tags to every span created through it: the stacktrace string to be parsed by the backend API server, the language/platform (namely "nodejs"), as well
-                    as the full directory path of the entrypoint of the application, as this is required to in the backend API server to trim the filepath prefixes to allow for resolving to the application
-                    root directory on the end user's machine. Next the Go tracer shim implementation will be discussed, along with the differences encountered compared to the NodeJS tracer shim.
+                In whole, the NodeJS shim attaches three tags to every span created through it: the stacktrace string to be parsed by the backend API server, the language/platform (namely "nodejs"), as well
+                as the full directory path of the entrypoint of the application, as this is required to in the backend API server to trim the filepath prefixes to allow for resolving to the application
+                root directory on the end user's machine. Next the Go tracer shim implementation will be discussed, along with the differences encountered compared to the NodeJS tracer shim.
 
-                \subsubsection{Go Tracer Shim}
-                    The Go tracer shim implementation came along with a wholly different set of problems to solve. As with NodeJS, capturing a stacktrace in Go is made trivial by the Go standard library. However,
-                    in a similar fashion, the stacktrace returned by the Go runtime does not go further than the point where a function was called as a goroutine\cite{goroutine}, the term used in Go to refer to a 
-                    form of green threads employed by the language to achieve concurrency. In contrast to NodeJS, this behaviour is consistent for all tested scenarios, which establishes confidence in the quality 
-                    of the returned stacktrace. Figure~\ref{fig:gostack} displays a stacktrace collected in Go, which will be described in more detail in Section~\ref{sec:goparser}. Of particular note, in the context
-                    of stacktraces collection in asynchronous contexts, are the final two lines of the stacktrace, where the indication is made that this stack frame is the beginning of a new goroutine ("\texttt{created
-                    by net/http.(*Server).Serve}"), with the function name, source code path and file line number of the function that created the goroutine outlined.
+            \subsection{Go Tracer Shim}
+                The Go tracer shim implementation came along with a wholly different set of problems to solve. As with NodeJS, capturing a stacktrace in Go is made trivial by the Go standard library. However,
+                in a similar fashion, the stacktrace returned by the Go runtime does not go further than the point where a function was called as a goroutine\cite{goroutine}, the term used in Go to refer to a 
+                form of green threads employed by the language to achieve concurrency. In contrast to NodeJS, this behaviour is consistent for all tested scenarios, which establishes confidence in the quality 
+                of the returned stacktrace. Figure~\ref{fig:gostack} displays a stacktrace collected in Go, which will be described in more detail in Section~\ref{sec:goparser}. Of particular note, in the context
+                of stacktraces collection in asynchronous contexts, are the final two lines of the stacktrace, where the indication is made that this stack frame is the beginning of a new goroutine ("\texttt{created
+                by net/http.(*Server).Serve}"), with the function name, source code path and file line number of the function that created the goroutine outlined.
 
-                    \begin{figure}[hbt!]
-                        \centering
-                        \includegraphics[scale=0.4]{gostack.png}
-                        \caption{Go stacktrace collected after two functions calls from within a HTTP handler.}
-                        \label{fig:gostack}
-                    \end{figure}
+                \begin{figure}[hbt!]
+                    \centering
+                    \includegraphics[scale=0.4]{gostack.png}
+                    \caption{Go stacktrace collected after two functions calls from within a HTTP handler.}
+                    \label{fig:gostack}
+                \end{figure}
 
-                    While in the NodeJS tracer shim, it was possible to query for the directory path of the project root directory, this proved to not be a portable solution for the Go implementation. The filepaths
-                    in the stacktrace are based off compile-time values, therefore using the runtime project root directory would yield a value that cannot be applied to the trimming the filepaths in the stacktrace. 
-                    After researching methods for retrieving the value of the compile-time project root directory, the most optimal solution that was found was to utilise compiler linker flags to set values at compile
-                    time\cite{golangldflag}. By invoking the compiler as follows, it is possible to set the value of the project root directory variable at compile time: '\texttt{go build -ldflags "-X 
-                    github.com/Strum355/tracestep/golang.GoModulePath="\$(pwd) cmd/*.go}'. \\The Go tracer shim adds one extra tag to each of its spans compared to the NodeJS tracer shim, a value to represent the 
-                    \texttt{GOPATH} environment variable at compile-time. Unlike in NodeJS, dependencies are commonly stored in a central directory in the filesystem, and as such to resolve them, said directory needs to
-                    be known to mark the relevant stack frames as requiring extra resolving, either via user input or by looking up a previously stored value for the value of \texttt{GOPATH} on the end user's machine,
-                    when consumed by the debug extension in Section~\ref{sec:impldebug}. All other processing is then handled by the backend API server for the debug extension to consumes, which will be discussed in the 
-                    following section.
+                While in the NodeJS tracer shim, it was possible to query for the directory path of the project root directory, this proved to not be a portable solution for the Go implementation. The filepaths
+                in the stacktrace are based off compile-time values, therefore using the runtime project root directory would yield a value that cannot be applied to the trimming the filepaths in the stacktrace. 
+                After researching methods for retrieving the value of the compile-time project root directory, the most optimal solution that was found was to utilise compiler linker flags to set values at compile
+                time\cite{golangldflag}. By invoking the compiler as follows, it is possible to set the value of the project root directory variable at compile time: '\texttt{go build -ldflags "-X 
+                github.com/Strum355/tracestep/golang.GoModulePath=\$(pwd)" *.go}'.\\ The Go tracer shim adds one extra tag to each of its spans compared to the NodeJS tracer shim, a value to represent the 
+                \texttt{GOPATH} environment variable at compile-time. Unlike in NodeJS, dependencies are commonly stored in a central directory in the filesystem, and as such to resolve them, said directory needs to
+                be known to mark the relevant stack frames as requiring extra resolving, either via user input or by looking up a previously stored value for the value of \texttt{GOPATH} on the end user's machine,
+                when consumed by the debug extension in Section~\ref{sec:impldebug}. All other processing is then handled by the backend API server for the debug extension to consumes, which will be discussed in the 
+                following section.
 
-                
-                % TODO: GET IT DONE. The Python Jaeger client libraries did not support transporting spans over HTTP, with only UDP transport support. 
-                % TODO: GET JVM DONE TOO
-                % go and node, python bad coz UDP, https://golang.org/cmd/link/
+            \subsection{JVM Tracer Shim}
+                The JVM tracer shim implementation brings about support for a whole new set of languages, including Java, Kotlin, Scala, Groovy and other languages that compile to the JVM platform. Due to time 
+                constraints, this shim could not be fully completed. It is able to collect a stacktrace, dependency resolution could not be started, in part due to the additional complexity of dependency management
+                for JVM languages, with a number of tools that are widely used such as Maven and Gradle requiring additional work to fetch dependency sources, as dependencies are generally shipped as compiled bytecode 
+                \textit{class} files in \textit{Java Archive (JAR)} files. Often library maintainers do not upload the sources in the first place, so for many libraries it would not be possible to load the source files
+                in Visual Studio Code without a decompiler. For these reasons, the stacktrace collection was limited to packages and subpackages that are part of the main application.
 
-            \subsection{Backend API}
-            \label{sec:backend}
-                The backend provides a client- and database-agnostic interface to consume distributed tracing data from the data store. It implements a GraphQL server that allows for the extra computation
-                required for some data object attributes to be avoided where not necessary. The main constructs of the backend will be discussed are the GraphQL schema, schema builder and resolver, the stack
-                parsers that transform the stacktraces emitted by the tracer shims, how interfacing with the Elasticsearch database was handled, and finally any major issues that were encountered during development.
+                The shim is implemented as a pair of simple delegating wrapping classes in Kotlin that implement the \texttt{io.opentracing.Tracer} and \texttt{io.opentracing.\\Tracer.SpanBuilder} interfaces. While
+                researching methods for getting the main class, for filtering stack frames due to the aforementioned fact that dependencies are not being handled as well as for future work when implementing dependency 
+                resolution support, there was a wide variety of different methods of varying complexity found online. In the end, due to a lack of time, it was decided to simply read the JAR manifest file at runtime
+                and parse it for the \texttt{Main-Class} section. This proved to be successful and easily implemented in the sample application, however there was not an adequate amount of time to research how portable
+                this solution was and in how many situations this method would not give the required results.
 
-                It was decided that it would be implemented in Kotlin after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
-                that utilized the Kotlin type-safe builder constructs\cite{dsl} to declare GraphQL schemas and Elasticsearch queries in the Kotlin-based \textit{Domain Specific Language} (DSL), allowing
-                for more expressive construction of the GraphQL schema and Elasticsearch queries natively in the language. 
-                
-                Listing~\ref{lst:kgraphql} illustrates how the GraphQL schema is defined in Kotlin code. The GraphQL Kotlin implementation is maintained by Jógvan Olsen, and can be found at 
-                \url{https://github.com/aPureBase/KGraphQL}. Line 2 defines a field on the Query top-level object, an entrypoint into the server named \textit{"findTrace"} that takes a single string parameter 
-                denoting the trace identifier of the trace object that is being requested. This identifier is passed to the data storage repository instance, of which there is only a simple Elasticsearch 
-                repository implemented. Additional data stores such as Apache Cassandra are not implemented, however they may be trivially implemented as the GraphQL resolver operates on a generic data store 
-                interface which abstracts the data storage layer from the GraphQL resolvers.
+                The current thread is queried for its stackframes, returned as an array of \texttt{StackFrameElement}s. A textual representation of the stack frames that whos package name contains the main class's package
+                name as a prefix are gathered, with the file line numbers in accompaniment in an easily parsable format for the backend to process.
+            
+        \section{Backend API}
+        \label{sec:backend}
+            The backend provides a client- and database-agnostic interface to consume distributed tracing data from the data store. It implements a GraphQL server that allows for the extra computation
+            required for some data object attributes to be avoided where not necessary. The main constructs of the backend will be discussed are the GraphQL schema, schema builder and resolver, the stack
+            parsers that transform the stacktraces emitted by the tracer shims, how interfacing with the Elasticsearch database was handled, and finally any major issues that were encountered during development.
 
-                Additionally, an extra property is defined on the \textit{Span} type, named \textit{"stacktrace"} for denoting the stacktrace object consumed by the debugger runtime from Section~\ref{sec:impldebug}, 
-                and the \textit{"logs"} field already defined on the \textit{Span} type, with a custom resolver to optionally filter the data in the field before the data is serialized. Each custom field resolver takes
-                the parent object as the first parameter, upon which further operations are carried out. The stacktrace resolvers purpose is to transform the raw stacktrace stored in the span tag into a defined and common
-                format. It does this by reading both the stacktrace and the programming language that this span originated from and processes the stacktrace with the appropriate stacktrace parser, for which there is one
-                for every language supported. As two OpenTracing tracer shims were created, one for the Go programming language and one for NodeJS (for JavaScript/TypeScript), two stacktrace parsers needed to be implemented 
-                to parse the respective stacktraces into a common format.
+            It was decided that it would be implemented in Kotlin after evaluating the different Elasticsearch and GraphQL libraries available, of which there were libraries 
+            that utilized the Kotlin type-safe builder constructs\cite{dsl} to declare GraphQL schemas and Elasticsearch queries in the Kotlin-based \textit{Domain Specific Language} (DSL), allowing
+            for more expressive construction of the GraphQL schema and Elasticsearch queries natively in the language. 
+            
+            Listing~\ref{lst:kgraphql} illustrates how the GraphQL schema is defined in Kotlin code. The GraphQL Kotlin implementation is maintained by Jógvan Olsen, and can be found at 
+            \url{https://github.com/aPureBase/KGraphQL}. Line 2 defines a field on the Query top-level object, an entrypoint into the server named \textit{"findTrace"} that takes a single string parameter 
+            denoting the trace identifier of the trace object that is being requested. This identifier is passed to the data storage repository instance, of which there is only a simple Elasticsearch 
+            repository implemented. Additional data stores such as Apache Cassandra are not implemented, however they may be trivially implemented as the GraphQL resolver operates on a generic data store 
+            interface which abstracts the data storage layer from the GraphQL resolvers.
 
-                \begin{spacing}{1.0}
-                    \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=24, label={lst:kgraphql}]
-                        val schema = KGraphQL.schema { 
-                            query("findTrace") { 
-                                resolver { traceID: String ->
+            Additionally, an extra property is defined on the \textit{Span} type, named \textit{"stacktrace"} for denoting the stacktrace object consumed by the debugger runtime from Section~\ref{sec:impldebug}, 
+            and the \textit{"logs"} field already defined on the \textit{Span} type, with a custom resolver to optionally filter the data in the field before the data is serialized. Each custom field resolver takes
+            the parent object as the first parameter, upon which further operations are carried out. The stacktrace resolvers purpose is to transform the raw stacktrace stored in the span tag into a defined and common
+            format. It does this by reading both the stacktrace and the programming language that this span originated from and processes the stacktrace with the appropriate stacktrace parser, for which there is one
+            for every language supported. As two OpenTracing tracer shims were created, one for the Go programming language and one for NodeJS (for JavaScript/TypeScript), two stacktrace parsers needed to be implemented 
+            to parse the respective stacktraces into a common format.
+
+            \begin{spacing}{1.0}
+                \begin{lstlisting}[caption=Kotlin snippet of defining the GraphQL schema using the Kotlin DSL., language=Kotlin, gobble=20, label={lst:kgraphql}]
+                    val schema = KGraphQL.schema { 
+                        query("findTrace") { 
+                            resolver { traceID: String ->
+                                // ...
+                            }.withArgs { 
+                                arg<String> { name = "traceID"}
+                            }
+                        }
+
+                        type<Span> {
+                            property<StackTrace>("stacktrace") { 
+                                resolver { span ->
                                     // ...
-                                }.withArgs { 
-                                    arg<String> { name = "traceID"}
                                 }
                             }
 
-                            type<Span> {
-                                property<StackTrace>("stacktrace") { 
-                                    resolver { span ->
-                                        // ...
-                                    }
-                                }
-
-                                property<List<LogPoint>?>("logs") {
-                                    resolver { span: Span, eventType: String? ->
-                                        // ...
-                                    }
+                            property<List<LogPoint>?>("logs") {
+                                resolver { span: Span, eventType: String? ->
+                                    // ...
                                 }
                             }
-                        }                
+                        }
+                    }                
+                \end{lstlisting}
+            \end{spacing}
+
+            \subsection{NodeJS Stacktrace Parser}
+            \label{sec:nodeparser}
+                In Listing~\ref{lst:nodeparser}, the NodeJS stack parser is illustrated. A sample NodeJS stacktrace is provided in Figure~\ref{fig:nodejsstack} to illustrate the
+                format the parser deals with. A Regular Expression is used to extract the file path and line number for each line
+                in the stacktrace, which is in the format of \texttt{/file/path:line}. The final number in each line denotes the column in the file. This information is not 
+                used for simplicity purposes and to keep a more common stacktrace format, as this information is not present in many languages, however, future endeavours could
+                explore how to utilise it where present.
+                
+                As NodeJS dependencies reside under a common directory in the project directory, path resolving for files of dependencies referenced in the stacktrace is trivial. 
+                Figure~\ref{fig:nodejsstack} shows many stack frames originating from functions in files under the path \texttt{/nodejs/microservice/node\_modules/express}. \textit{Express},
+                a NodeJS HTTP framework, is a dependency of the sample NodeJS microservice, and resides in a subdirectory of the microservice directory, the directory being \texttt{/nodejs/microservice}
+                in the given stacktrace. For this reason, \texttt{null} is passed to the \textit{StackFrame} constructor as the first argument, which denotes the package name to aid in
+                dependency resolution and isolation, as it is not needed for the aforementioned reason.
+
+                Earlier in development, before the \textit{clarify}{\cite{clarify}} NodeJS package had been discovered, stacktraces would contain a number of entries that were associated with NodeJS internal 
+                runtime files. The parser was setup to ignore such lines by returning \texttt{null} from the \texttt{mapNotNull} function, which excludes null values from the final list. They were considered unimportant 
+                enough to warrant not being included, as implementing support for language internals is outside of the scope of this project where implementation is non-trivial. As this was no longer an issue
+                after discovery of the aforementioned package, the parser remained unchanged as there was no reason to change it.
+
+                \newpage
+                \begin{spacing}{1.0}
+                    \begin{lstlisting}[language=Kotlin, gobble=24, label={lst:nodeparser}, caption={The NodeJS Stack parser class }]
+                        private val scrubber = Regex(""".*?(\/.+?:\d+).*""")
+
+                        class NodeJSStackParser(var stacktrace: String, val execPath: String) {
+                            fun parse(): StackTrace {
+                                val seq = stacktrace.split("\n").mapNotNull {
+                                    val match = scrubber.find(it)?.destructured
+                                    val fileInfo = match?.component1() ?: return@mapNotNull null
+                                    val (path, line) = fileInfo.split(":")
+                                    val strippedPath = path.removePrefix(execPath+"/")
+                                    val lineInt = line.toInt()
+                                    val packageName = extractModule(strippedPath)
+                                    StackFrame(packageName, strippedPath, lineInt, false)
+                                }
+                                return StackTrace(seq)
+                            }
+                            
+                            private fun extractModule(filepath: String): String {
+                                val pathWithoutFile = filepath.removeSuffix(File(filepath).name)
+                                return when(pathWithoutFile.length) {
+                                    0 -> "main"
+                                    else -> pathWithoutFile
+                                }
+                        }
+                    \end{lstlisting}
+                \end{spacing}
+                \bigskip
+
+                As the NodeJS OpenTracing tracer shim initialises the \texttt{source-map-support} library, stack frame lines in the stacktrace that have an 
+                accompanying line representing the source mapping are overwritten with the source mapping. This greatly simplifies the stacktrace parsing, as there is only one line
+                associated with each stack frame, with the source mapping being the definitive line where available.
+                % TODO: expand? 
+
+            \subsection{Go Stacktrace Parser}
+            \label{sec:goparser}
+                Following on from the NodeJS stack parser is the Go stack parser in Listing~\ref{lst:goparser}. Parsing Go stacktraces is notably more involved than parsing NodeJS 
+                stacktraces. Each stack frame, as shown in Figure~\ref{fig:gostack} is represented by two lines in the stacktrace string: the first line contains the package name, function name 
+                and the function call argument addresses for each parameter of the function called as well as the address of the returned variable(s), while the second line contains the path of 
+                the file containing the function the stack frame represents at compile time, the line in the file and finally program counter information. 
+
+                The parser initially removes unused data from the stacktrace string, removing the program counter information, function argument and return variable addresses. What remains
+                are the package names with function names and file paths with line numbers on alternating lines. The package names, file paths and line numbers are extracted from this, and
+                as the function names are not needed, they are discarded. 
+
+                There are five main types of packages that need to be handled in Go: the main package which contains the entrypoint into the application, subpackages of the application,
+                internal packages that are part of the Go standard library, vendored dependencies and lastly non-vendored dependencies. For the main package, subpackages and vendored
+                dependencies, the filepath handling mentioned in Section~\ref{sec:impldebug}, wherein source code filepaths that have the applications base path as a prefix, are resolved by prefixing
+                them with the user-provided base path of the application's path on the users machine, and their package name is set to null. For non-vendored dependencies, the \texttt{GOPATH} 
+                value provided to the tracer shim at compile time is trimmed from the paths and the package name is parsed and set. Finally, for the Go internal package files, the package name
+                is parsed and the filepath is left untouched.
+
+                This file path parsing makes a number of assumptions for the sake of simplicity, with not every environment scenario considered part of the scope of what it should handle. Firstly,
+                it assumes that \textit{Go Modules} is the dependency management system employed for the instrumented application. As this is the official system being promoted by the Go core team,
+                it was a natural fit to be supported. The older system without versioning also makes use of the \texttt{GOPATH} environment variable, and could be supported without much extra work,
+                while \textit{Dep} makes use of vendoring, and as such is already supported as a side-effect of the implementation. Lastly, it is assumed that all package names, outside of the internal
+                standard library, are in the format \texttt{domainname.tld/author/package/} with any number of subpackages, as the package name parser assumes a single period character in the name.
+                This was considered sufficient for the proof of concept, while implementing support for package names outside of this constraint was considered outside of the scope of the project.
+                % TODO: expand
+                
+                \newpage
+                \begin{spacing}{1.0}
+                    \begin{lstlisting}[language=Kotlin, gobble=24, label={lst:goparser}]
+                        private val scrubber1 = Regex("""\(((?:0x[a-f0-9]+, )*0x[a-f0-9]+)?\)\n""")
+                        private val scrubber2 = Regex(""" \+0x[0-9a-f]+""")
+                        
+                        class GolangStackParser(
+                            var stacktrace: String,
+                            val execPath: String,
+                            val gopath: String
+                        ) {
+                            fun parse(): StackTrace {
+                                stacktrace = scrubber1.replace(stacktrace, "\n")
+                                stacktrace = scrubber2.replace(stacktrace, "")
+                                stacktrace = stacktrace.replace(execPath+"/", "")
+                                stacktrace = stacktrace.replace(gopath, "")
+                                val seq = stacktrace.trim().split("\n").chunked(2).map {
+                                    val (packageFunc, fileLine) = it
+                                    val (path, line) = parseFileInfo(fileLine) 
+                                    val shouldResolve = when(path.startsWith("/pkg/mod")) {
+                                        true -> true
+                                        false -> shouldResolve(packageFunc, path)
+                                    } 
+                                    val pkg = parsePackageLine(packageFunc)
+                                    StackFrame(pkg, path, line, shouldResolve)
+                                }
+                                return StackTrace(seq)
+                            }
+                        
+                            private fun shouldResolve(packageStr: String, path: String): Boolean {
+                                if (!path.startsWith("/")) return false
+                                val packageFuncSplit = packageStr.split(".")
+                                return !packageFuncSplit.first().contains("/")
+                            }
+                        
+                            private fun parsePackageLine(packageStr: String): String? {
+                                val pkgFuncSplit = packageStr.split(".")
+                                if (pkgFuncSplit.first() == "main") return "main"
+                                if (pkgFuncSplit.first().contains("/")) return pkgFuncSplit.first()
+
+                                return pkgFuncSplit.take(2).joinToString(separator=".")
+                            }
+                        
+                            private fun parseFileInfo(fileInfo: String): Pair<String, Int> {
+                                val (path, line) = fileInfo.split(":")
+                                return Pair(path.trim(), line.toInt())
+                            }
+                        }
+                    \end{lstlisting}
+                \end{spacing}
+            
+            \subsection{Interfacing With Elasticsearch}
+                As the backend interfaces with an Elasticsearch database, there needs to be a way to build an Elasticsearch query that retrieves a specific trace for a given trace identifier. The Elasticsearch Query DSL
+                is based on JSON, which lends itself elegantly to being represented in the Kotlin DSL. Listing~\ref{lst:eskotlin} illustrates a simple yet complete sample for an Elasticsearch query for a document that
+                represents a trace for a given trace identifier, and how it is represented in the Elasticsearch Query DSL. The query builder DSL is provided by a Kotlin library by Mike Buhot, available at 
+                \url{https://github.com/mbuhot/eskotlin}, and the official Elasticsearch client is used to perform the queries against the database.
+
+                \bigskip
+                \begin{spacing}{1.0}
+                    \begin{lstlisting}[caption={Comparison between Elasticsearch query using Kotlin DSL and the query in its JSON representation, where $\langle$traceID$\rangle$ refers
+                        to a variable storing the trace identifier.}, label={lst:eskotlin}, language=Kotlin, gobble=24]
+                        // Kotlin DSL
+                        val query = term { 
+                            "traceID" {
+                                value = <traceID>
+                            }
+                        }
+
+                        // JSON Representation
+                        {
+                            "term": {
+                                "traceID": { 
+                                    "value": "<traceID>" 
+                                }
+                            }
+                        }
                     \end{lstlisting}
                 \end{spacing}
 
-                \subsubsection{NodeJS Stacktrace Parser}
-                \label{sec:nodeparser}
-                    In Listing~\ref{lst:nodeparser}, the NodeJS stack parser is illustrated. A sample NodeJS stacktrace is provided in Figure~\ref{fig:nodejsstack} to illustrate the
-                    format the parser deals with. A Regular Expression is used to extract the file path and line number for each line
-                    in the stacktrace, which is in the format of \texttt{/file/path:line}. The final number in each line denotes the column in the file. This information is not 
-                    used for simplicity purposes and to keep a more common stacktrace format, as this information is not present in many languages, however, future endeavours could
-                    explore how to utilise it where present.
-                    
-                    As NodeJS dependencies reside under a common directory in the project directory, path resolving for files of dependencies referenced in the stacktrace is trivial. 
-                    Figure~\ref{fig:nodejsstack} shows many stack frames originating from functions in files under the path \texttt{/nodejs/microservice/node\_modules/express}. \textit{Express},
-                    a NodeJS HTTP framework, is a dependency of the sample NodeJS microservice, and resides in a subdirectory of the microservice directory, the directory being \texttt{/nodejs/microservice}
-                    in the given stacktrace. For this reason, \texttt{null} is passed to the \textit{StackFrame} constructor as the first argument, which denotes the package name to aid in
-                    dependency resolution and isolation, as it is not needed for the aforementioned reason.
-
-                    \hl{Earlier in development, before the \textit{clarify}{\cite{clarify}} NodeJS package had been discovered, stacktraces would contain a number of entries that were associated with NodeJS internal 
-                    runtime files. The parser was setup to ignore such lines by returning \texttt{null} from the \texttt{mapNotNull} function, which excludes null values from the final list. They were considered unimportant 
-                    enough to warrant not being included, as implementing support for language internals is outside of the scope of this project where implementation is non-trivial. As this was no longer an issue
-                    after discovery of the aforementioned package, the parser remained unchanged as there was no reason to change it.}
-
-                    \begin{spacing}{1.0}
-                        \begin{lstlisting}[language=Kotlin, gobble=28, label={lst:nodeparser}, caption={The NodeJS Stack parser class }]
-                            private val scrubber = Regex(""".*?(\/.+?:\d+).*""")
-
-                            class NodeJSStackParser(var stacktrace: String, val execPath: String) {
-                                fun parse(): StackTrace {
-                                    val seq = stacktrace.split("\n").mapNotNull {
-                                        val match = scrubber.find(it)
-                                        // the full filepath + line string, early return if no match
-                                        val fileInfo = match?.component1() ?: return@mapNotNull null
-                                        val (path, line) = fileInfo.split(":")
-                                        val strippedPath = path.removePrefix(execPath+"/")
-                                        val lineInt = line.toInt()
-                                        StackFrame(packageName, strippedPath, lineInt, false)
-                                    }
-                                    return StackTrace(seq)
-                                }
-                                
-                                private fun extractModule(filepath: String): String {
-                                    val pathWithoutFile = filepath.removeSuffix(File(filepath).name)
-                                    return when(pathWithoutFile.length) {
-                                        0 -> "main"
-                                        else -> pathWithoutFile
-                                    }
-                            }
-                        \end{lstlisting}
-                    \end{spacing}
-
-                    As the NodeJS OpenTracing tracer shim initialises the \texttt{source-map-support} library, stack frame lines in the stacktrace that have an 
-                    accompanying line representing the source mapping are overwritten with the source mapping. This greatly simplifies the stacktrace parsing, as there is only one line
-                    associated with each stack frame, with the source mapping being the definitive line where available.
-                    % TODO: expand? 
-
-                \subsubsection{Go Stacktrace Parser}
-                \label{sec:goparser}
-                    Following on from the NodeJS stack parser is the Go stack parser in Listing~\ref{lst:goparser}. Parsing Go stacktraces is notably more involved than parsing NodeJS 
-                    stacktraces. Each stack frame is represented by two lines in the stacktrace string: the first line contains the package name, function name and the function call argument 
-                    addresses for each parameter of the function called as well as the address of the returned variable(s), while the second line contains the path of the file containing the 
-                    function the stack frame represents at compile time, the line in the file and finally program counter information. 
-
-                    The parser initially removes unused data from the stacktrace string, removing the program counter information, function argument and return variable addresses. What remains
-                    are the package names with function names and file paths with line numbers on alternating lines. The package names, file paths and line numbers are extracted from this, and
-                    as the function names are not needed, they are discarded. 
-
-                    There are five main types of packages that need to be handled in Go: the main package which contains the entrypoint into the application, subpackages of the application,
-                    internal packages that are part of the Go standard library, vendored dependencies and lastly non-vendored dependencies. For the main package, subpackages and vendored
-                    dependencies, the filepath handling mentioned in Section~\ref{sec:impldebug}, wherein source code filepaths that have the applications base path as a prefix, are resolved by prefixing
-                    them with the user-provided base path of the application's path on the users machine, and their package name is set to null. For non-vendored dependencies, the \texttt{GOPATH} 
-                    value provided to the tracer shim at compile time is trimmed from the paths and the package name is parsed and set. Finally, for the Go internal package files, the package name
-                    is parsed and the filepath is left untouched.
-
-                    This file path parsing makes a number of assumptions for the sake of simplicity, with not every environment scenario considered part of the scope of what it should handle. Firstly,
-                    it assumes that \textit{Go Modules} is the dependency management system employed for the instrumented application. As this is the official system being promoted by the Go core team,
-                    it was a natural fit to be supported. The older system without versioning also makes use of the \texttt{GOPATH} environment variable, and could be supported without much extra work,
-                    while \textit{Dep} makes use of vendoring, and as such is already supported as a side-effect of the implementation. Lastly, it is assumed that all package names, outside of the internal
-                    standard library, are in the format \texttt{domainname.tld/author/package/} with any number of subpackages, as the package name parser assumes a single period character in the name.
-                    This was considered sufficient for the proof of concept, while implementing support for package names outside of this constraint was considered outside of the scope of the project.
-                    % TODO: expand
-                    \medskip
-                    \begin{spacing}{1.0}
-                        \begin{lstlisting}[language=Kotlin, gobble=28, label={lst:goparser}]
-                            private val scrubber1 = Regex("""\(((?:0x[a-f0-9]+, )*0x[a-f0-9]+)?\)\n""")
-                            private val scrubber2 = Regex(""" \+0x[0-9a-f]+""")
-                            
-                            class GolangStackParser(
-                                var stacktrace: String,
-                                val execPath: String,
-                                val gopath: String
-                            ) {
-                                fun parse(): StackTrace {
-                                    stacktrace = scrubber1.replace(stacktrace, "\n")
-                                    stacktrace = scrubber2.replace(stacktrace, "")
-                                    stacktrace = stacktrace.replace(execPath+"/", "")
-                                    stacktrace = stacktrace.replace(gopath, "")
-                                    val seq = stacktrace.trim().split("\n").chunked(2).map {
-                                        val (packageFunc, fileLine) = it
-                                        val (path, line) = parseFileInfo(fileLine) 
-                                        val shouldResolve = when(path.startsWith("/pkg/mod")) {
-                                            true -> true
-                                            false -> shouldResolve(packageFunc, path)
-                                        } 
-                                        val pkg = parsePackageLine(packageFunc)
-                                        StackFrame(pkg, path, line, shouldResolve)
-                                    }
-                                    return StackTrace(seq)
-                                }
-                            
-                                private fun shouldResolve(packageStr: String, path: String): Boolean {
-                                    if (!path.startsWith("/")) return false
-                                    val packageFuncSplit = packageStr.split(".")
-                                    return !packageFuncSplit.first().contains("/")
-                                }
-                            
-                                private fun parsePackageLine(packageStr: String): String? {
-                                    val pkgFuncSplit = packageStr.split(".")
-                                    if (pkgFuncSplit.first() == "main") return "main"
-                                    if (pkgFuncSplit.first().contains("/")) return pkgFuncSplit.first()
-
-                                    return pkgFuncSplit.take(2).joinToString(separator=".")
-                                }
-                            
-                                private fun parseFileInfo(fileInfo: String): Pair<String, Int> {
-                                    val (path, line) = fileInfo.split(":")
-                                    return Pair(path.trim(), line.toInt())
-                                }
-                            }
-                        \end{lstlisting}
-                    \end{spacing}
+            \subsection{Issues Encountered}
+                During development with the GraphQL library, there were two major issues that were encountered that stalled progress. These were due to differences in how Kotlin treats the Array type, its
+                relationship to the Java Array primitive type and their APIs in comparison to other array-like collection types, and behaviour of Java Virtual Machine Type Erasure\cite{typeerasure} at runtime respectively.
                 
-                \subsubsection{Interfacing With Elasticsearch}
-                    As the backend interfaces with an Elasticsearch database, there needs to be a way to build an Elasticsearch query that retrieves a specific trace for a given trace identifier. The Elasticsearch Query DSL
-                    is based on JSON, which lends itself elegantly to being represented in the Kotlin DSL. Listing~\ref{lst:eskotlin} illustrates a simple yet complete sample for an Elasticsearch query for a document that
-                    represents a trace for a given trace identifier, and how it is represented in the Elasticsearch Query DSL. The query builder DSL is provided by a Kotlin library by Mike Buhot, available at 
-                    \url{https://github.com/mbuhot/eskotlin}, and the official Elasticsearch client is used to perform the queries against the database.
+                \smallskip
+                In Kotlin and Java, the Array types do not implement the \texttt{Iterable} interface, unlike the \texttt{ArrayList} or \texttt{Vector} classes. Originally, KGraphQL checked whether a type implemented the 
+                Iterable interface, which the majority of collection types do. As Arrays do not implement the interface, they were treated as a standard generic class, which causes an exception to be thrown indicating 
+                that generic types are not supported. the \texttt{Arrays} class provides static methods to wrap an Array type with the \texttt{List} API, which implements the Iterable interface without copying the 
+                underlying array. An issue was opened for this on the Github repository, after which Array support was added through use of the aforementioned static method.
 
-                    \bigskip
-                    \begin{spacing}{1.0}
-                        \begin{lstlisting}[caption={Comparison between Elasticsearch query using Kotlin DSL and the query in its JSON representation, where $\langle$traceID$\rangle$ refers
-                            to a variable storing the trace identifier.}, label={lst:eskotlin}, language=Kotlin, gobble=24]
-                            // Kotlin DSL
-                            val query = term { 
-                                "traceID" {
-                                    value = <traceID>
-                                }
-                            }
-
-                            // JSON Representation
-                            {
-                                "term": {
-                                    "traceID": { 
-                                        "value": "<traceID>" 
-                                    }
-                                }
-                            }
-                        \end{lstlisting}
-                    \end{spacing}
-
-                \subsubsection{Issues Encountered}
-                    During development with the GraphQL library, there were two major issues that were encountered that stalled progress. These were due to differences in how Kotlin treats the Array type, its
-                    relationship to the Java Array primitive type and their APIs in comparison to other array-like collection types, and behaviour of Java Virtual Machine Type Erasure\cite{typeerasure} at runtime respectively.
-                    
-                    \smallskip
-                    In Kotlin and Java, the Array types do not implement the \texttt{Iterable} interface, unlike the \texttt{ArrayList} or \texttt{Vector} classes. Originally, KGraphQL checked whether a type implemented the 
-                    Iterable interface, which the majority of collection types do. As Arrays do not implement the interface, they were treated as a standard generic class, which causes an exception to be thrown indicating 
-                    that generic types are not supported. the \texttt{Arrays} class provides static methods to wrap an Array type with the \texttt{List} API, which implements the Iterable interface without copying the 
-                    underlying array. An issue was opened for this on the Github repository, after which Array support was added through use of the aforementioned static method.
-
-                    The second obstacle revolved around type erasure and casting from the \texttt{Any} type (the root type of the Kotlin class hierarchy, as \texttt{Object} is in Java) to an \texttt{ArrayList}. When fetching data from 
-                    Elasticsearch, the returned document is represented as a \texttt{Map<String, Any>}, as each value may be of a different type. When fetching the list of tags from the document map, they are cast to an 
-                    \texttt{ArrayList<Tag>?}, as list types are stored in an \texttt{ArrayList} in the document map. This cast is technically successful at runtime, however only partially. Due to type erasure, the cast only 
-                    confirms that the cast from \texttt{Any} to \texttt{ArrayList} is valid, which it is. However, instead of being an \texttt{ArrayList} of \texttt{Tag} objects, it contains \texttt{HashMap<Any, Any>}, in which 
-                    each attribute of the \texttt{Tag} type is a key in the map. After debugging the issue with the KGraphQL library author, the solution was plainly to extract the values from the map into \texttt{Tag} objects.
+                The second obstacle revolved around type erasure and casting from the \texttt{Any} type (the root type of the Kotlin class hierarchy, as \texttt{Object} is in Java) to an \texttt{ArrayList}. When fetching data from 
+                Elasticsearch, the returned document is represented as a \texttt{Map<String, Any>}, as each value may be of a different type. When fetching the list of tags from the document map, they are cast to an 
+                \texttt{ArrayList<Tag>?}, as list types are stored in an \texttt{ArrayList} in the document map. This cast is technically successful at runtime, however only partially. Due to type erasure, the cast only 
+                confirms that the cast from \texttt{Any} to \texttt{ArrayList} is valid, which it is. However, instead of being an \texttt{ArrayList} of \texttt{Tag} objects, it contains \texttt{HashMap<Any, Any>}, in which 
+                each attribute of the \texttt{Tag} type is a key in the map. After debugging the issue with the KGraphQL library author, the solution was plainly to extract the values from the map into \texttt{Tag} objects.
             
-
+        \section{Summary}
+            The implementations of tracer shims provide a powerful OpenTracing API compatible way of injecting additional runtime information into traces. While the different programming languages and 
+            runtimes differed in the ease of amassing the necessary info required for the backend API to transform the data into the GraphQL stacktrace objects consumed by the debug adapter, each one 
+            explored had some way of doing so, either through compile-time linker flags or queryable via the runtime. In the following chapter, the results will be evaluated as well as benchmarks
+            where applicable.
+            
+                    
     \chapter{Evaluation}
-        %  Not all languages have runtime info for source file and line num eg C, C++
-        % performance
+    % stackwalker
+    % jvm package prefix if main is subpackage
+        This chapter will discuss the results of implementing the debug adapter and its dependent services such as the various tracer shims and the backend API server. As well as benchmarks where
+        they exist, the shortcomings and workarounds that were used to achieve the desired end results for the different tracer shims will be evaluated with respect to each other.
 
-        % trimming common frames
+        \bigskip
+        \section{Tracer Shims}
+            The OpenTracing tracer shims proved to be by and large a success in the sample microservices system created to test them. While the Go shim requires some extra input at compile-time due to the
+            workaround used to amass the required information, it is fairly trivial for users of the shim library to do so by providing additional flags when invoking the compiler.
 
-        %  This alone, the ability to filter on metrics and arbitrary fields, is made possible already by storing events in non-aggregated form and deriving metrics dynamically. 
-    
+            While there are many programming languages and runtimes which may be viable candidates for implementing OpenTracing tracer shims, there are a number of languages, notably C++ and C, for which 
+            it would not be possible due to a very notable lack of program introspection information available at runtime that would be required to implement a tracer shim.
+
+            \subsection{Benchmarks}
+                Benchmarks were created for the Go and NodeJS tracer shims to observe the potential overhead of utilising the shims in applications. Unfortunately, time did not permit spending more time 
+                trying to get benchmarking to work with Maven and Kotlin. 
+
+                While artificial benchmarks are widely considered to not be well equipped to provide the data from which conclusive deductions can be derived regarding the behaviour of the shims' 
+                performance in real-world production applications, they can provide a basic insight into the performance trends one might observe outside of the benchmarks.
+
+                \begin{table}
+                    \bgroup
+                    \def\arraystretch{1.2}
+                        \centering
+                        \begin{tabular}{|l|r|c|}
+                            \toprule
+                            \multicolumn{1}{c}{\textbf{Benchmark}} & \multicolumn{1}{c}{\textbf{Num. invoc/sec}} & \multicolumn{1}{c}{\textbf{\% vs Mock}}  \\ \Xhline{1.05pt}\midrule
+                            NodeJS Mock                            & 4,490 ops/s                                 &                                          \\ 
+                            NodeJS Shim                            & 2,235 ops/s                                 & 50.22\% slower                           \\ \midrule
+                            Go Mock                                & 4,291,845 ops/s                             &                                          \\ 
+                            Go Shim                                & 115,617 ops/s                               & 97.30\% slower                           \\ \hline
+                        \end{tabular}
+                        \caption{Benchmarks for a Mock tracer compared to the Shim for Go and NodeJS.}
+                        \label{tab:bench}
+                    \egroup
+                \end{table}
+
+                The results of the benchmarks are displayed in \autoref{tab:bench}, with the third column showing the relative difference in performance as a percentage between the mock tracer
+                and the shim wrapping the mock tracer for each of Go and NodeJS. The NodeJS shim takes a considerably smaller performance hit than the Go shim, with only a 50.22\% difference
+                between the NodeJS mock tracer and the shim, compared to 97.30\% difference for Go respectively. Naturally, as Go compiles to a native binary and NodeJS is an interpreter with a
+                Just-In-Time compiler, the Go benchmark figures show a considerably higher base performance in comparison.
+
+                While care has been taken to try reduce the overhead, deferring more expensive operations to the backend server where appropriate or considered obviously necessary, these results 
+                strongly suggest a need for the shim to potentially apply sampling regarding its own operations independently of the tracer implementation's sampling decision, to lessen the amount of overhead 
+                applied globally. As with the sampling performed in many OpenTracing tracer implementations, this should take the form of head-based sampling to avoid having traces where only a subset of spans 
+                have the shims applied.
+
+        \section{Debug Adapter}
+            While much of the success of the debug adapter can be attributed to the success of the tracer shims, the debug adapter protocol and Visual Studio Code lent themselves well to visualising
+            enriched distributed tracing data in a debugging context. That being said, the viability of a debugging session based off distributed traces is highly dependent on the level of instrumentation
+            in the services that make up a distributed system, language and/or runtime aside. Often when instrumenting systems for distributed tracing for the first time, developers will instrument their code 
+            at the HTTP endpoint level, with one span created for every network request made. With this level of instrumentation, there is no way to collect stacktraces from further down the function call 
+            chain for every service request involved in a trace. As a result, it can be considered that this would be more suited towards systems with more mature levels of instrumentation, providing a larger, 
+            richer amount of data for recreating the function call graph. A well instrumented system would also bring with it a larger set of span tags, providing more context at each step.
+                
+            An interesting challenge arises in scenarios where a given service in a system emits multiple spans for a given request, in other words where later spans within a single service's function call stack 
+            contain all or a common prefix of the previous spans' stack frames on top of their additional ones. While stepping through the stack frames of a span, as they transition from one span to the next they 
+            may have to step through stack frames that were already part of the previous span again before reaching the additional stack frames that the new span carries. The immediate solution that may come to mind
+            would be to trim the previous span's stack frames from the current span's stack frames, however this isnt a flawless solution. For example, given two spans with a common parent and identical stacktraces,
+            such as when a function is called in a loop, trimming the previous span's stack frames from the two spans' stack frames would result in no stack frames at all in both child spans. The more correct solution 
+            here would be, rather than trimming the stack frames of the span immediately previous to the two spans, to trim the parents stack frames from the them instead. This more correct solution was implemented as a 
+            preprocessing step in the debugger runtime, however further research into potential edge cases was not able to be done due to time concerns.
+
+        \newpage
+        \section{Backend API}
+            GraphQL was chosen for this project over REST early in the design phase as a means to become familiar with the technology. While undoubtedly very useful in the right scenarios, there were few opportunities to make 
+            use of the features it provides, such as the ability to avoid under- and over-fetching. These were not able to be fully utilised as the majority of the attributes on the objects returned by the API are all retreivable in 
+            a single Elasticsearch query, and given that there was just the one GraphQL client implemented for this project, namely the debug adapter, which itself only performs a single GraphQL query against the API, the capabilites 
+            of GraphQL were not explored beyond the basic examples present in the current state of the backend API. This being said, however, researching how to use GraphQL and implementing it in both server and client contexts has 
+            been a great experience and much was learned from it.
+
+            As a data transformation tool, Kotlin was a very pleasant experience when implementing the stacktrace parsers. It provides many utilities for string manipulation that result in concise and elegant stacktrace parsers
+            for the Go and NodeJS platforms, as well as functional methods that when chained provide for expressive operations on the list data types.
+
+            Finally, the Kotlin DSL employed for describing the GraphQL schema and Elasticsearch query, while basic in their use for the project, allowed for vastly more expressive representations of the GraphQL schema and Elasticsearch
+            query than is possible in Java, aligning much more with the Elasticsearch query respresentation from a visual perspective.
+
+        \section{Summary}
+            Overall, the results discussed in this chapter regarding the performance of the shims are not overly surprising given the generally expensive nature of stacktrace gathering, for which there are a number of options available 
+            to explore to work around the overhead. While different programming languages and runtimes demand various ways of gathering the required runtime and, where applicable, compile time information, for the languages where it is viable to 
+            implement them, the shims provide a generally powerful way for making it possible to implement a debug adapter around the data they emit. The debug adapter protocol specification fit well to the data, given the non traditional 
+            way in which it was utilised. As a result, with Visual Studio Code's support for the protocol, it was possible to present the data to end users via a reasonably straightforward implementation of a debugger runtime.
+
     \chapter{Conclusion \& Future}
     % showing multiple stacktraces from spans running at the same time
+    % collect when injecting
         \section{Conclusion}
 
         \section{Future Work}
             \subsection{OpenTelemetry}
+
+            \subsection{JVM Agent}
 
     \begin{thebibliography}{69}
         \addcontentsline{toc}{chapter}{Bibliography}    
@@ -1263,7 +1387,7 @@
         \url{https://github.com/jaegertracing/jaeger-client-go/pull/316#issuecomment-393386461}
 
         \bibitem{dwarf}
-        Michael J.Eager, \textit{Introduction to the DWARF Debugging Format.}
+        Michael J.Eager, \textit{Introduction to the DWARF Debugging Format.} \\
         Eager Consulting, April 2012 \\
         \url{http://www.dwarfstd.org/doc/Debugging%20using%20DWARF-2012.pdf}
 
@@ -1402,6 +1526,11 @@
         Filippo Valsorda, \textit{Setting Go variables from the outside.} \\
         Cloudflare, 1st June 2015 \\
         \url{https://blog.cloudflare.com/setting-go-variables-at-compile-time/}
+
+        \bibitem{openteleisrecording}
+        Sergey Kanzhelev, OpenTracing Authors, \textit{Tracing API - IsRecording.} \\
+        31st May 2019 \\
+        \url{https://github.com/open-telemetry/opentelemetry-specification/blob/bdf39cb935a6f48badc687daeb78a66dc352761f/specification/trace/api.md#isrecording}
 
     \end{thebibliography}
 \end{document}

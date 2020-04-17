@@ -20,3 +20,4 @@ sample.json
 *.fdb_latexmk
 *.toc
 *.out
+*.lof

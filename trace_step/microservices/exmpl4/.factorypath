@@ -103,4 +103,6 @@
     <factorypathentry kind="VARJAR" id="M2_REPO/io/opentracing/opentracing-mock/0.33.0/opentracing-mock-0.33.0.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/io/opentracing/opentracing-noop/0.33.0/opentracing-noop-0.33.0.jar" enabled="true" runInBatchMode="false"/>
     <factorypathentry kind="VARJAR" id="M2_REPO/io/opentracing/opentracing-util/0.33.0/opentracing-util-0.33.0.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar" enabled="true" runInBatchMode="false"/>
+    <factorypathentry kind="VARJAR" id="M2_REPO/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar" enabled="true" runInBatchMode="false"/>
 </factorypath>

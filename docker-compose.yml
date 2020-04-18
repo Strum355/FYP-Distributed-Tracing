@@ -17,8 +17,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.es.rule=Host(`es.localhost`)"
       - "traefik.http.services.es.loadbalancer.server.port=9200"     
-    ports:
-      - 9200:9200
     depends_on: 
       - traefik
 
@@ -31,10 +29,8 @@ services:
       SPAN_STORAGE_TYPE: elasticsearch
       ES_SERVER_URLS: http://elasticsearch:9200
     ports:
-      - 6831:6831/udp
       - 16686:16686
       - 14268:14268
-      - 14269:14269
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jaeger.rule=Host(`jaeger.localhost`)"
@@ -55,24 +51,10 @@ services:
       - "traefik.http.services.kibana.loadbalancer.server.port=5601"
     depends_on: 
       - traefik
-  
-  hotrod:
-    image: jaegertracing/example-hotrod
-    container_name: fyp-hotrod
-    command: all
-    environment: 
-      JAEGER_AGENT_HOST: jaeger
-      JAEGER_AGENT_PORT: 6831
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hotrod.rule=Host(`hotrod.localhost`)"
-      - "traefik.http.services.hotrod.loadbalancer.server.port=8080"
-    depends_on: 
-      - jaeger
     
   backend:
     build:
-      target: dev
+      target: dev # Remove this line for "production" build
       context: ./backend
     container_name: fyp-backend
     volumes: 
@@ -98,3 +80,31 @@ services:
     ports:
       - 80:80
       - 8080:8080
+
+  example1:
+    build:
+      context: ./trace_step
+      dockerfile: microservices/exmpl1/Dockerfile
+    container_name: fyp-example1
+    network_mode: "host"
+    
+  example2:
+    build:
+      context: ./trace_step
+      dockerfile: microservices/exmpl2/Dockerfile
+    container_name: fyp-example2
+    network_mode: "host"
+
+  example3:
+    build:
+      context: ./trace_step
+      dockerfile: microservices/exmpl3/Dockerfile
+    container_name: fyp-example3
+    network_mode: "host"
+
+  example4:
+    build:
+      context: ./trace_step
+      dockerfile: microservices/exmpl4/Dockerfile
+    container_name: fyp-example4
+    network_mode: "host"   

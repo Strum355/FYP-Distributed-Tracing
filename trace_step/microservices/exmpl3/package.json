@@ -4,14 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "tsc && node --enable-source-maps index.js"
+    "start": "tsc --build tsconfig.json  && node --enable-source-maps index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/express": "^4.17.6",
     "@types/jaeger-client": "^3.15.3",
-    "@types/node": "^13.11.1",
+    "@types/node": "^13.13.0",
     "@types/node-fetch": "^2.5.6",
     "@types/uuid": "^7.0.2",
     "express": "^4.17.1",
@@ -19,6 +19,7 @@
     "node-fetch": "^2.6.0",
     "opentracing": "^0.14.4",
     "tracestep": "file:../../nodejs",
+    "typescript": "^3.8.3",
     "uuid": "^7.0.3"
   }
 }

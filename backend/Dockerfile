@@ -1,4 +1,4 @@
-FROM gradle:6.3.0-jdk8 AS dev
+FROM gradle:6.3.0-jdk13 AS dev
 
 WORKDIR /topology
 
@@ -10,7 +10,7 @@ RUN gradle compileKotlin
 
 ENTRYPOINT [ "bash", "run.sh" ]
 
-FROM gradle:6.3.0-jdk8 AS builder
+FROM gradle:6.3.0-jdk13 AS builder
 
 WORKDIR /topology
 
@@ -18,7 +18,7 @@ COPY . .
 
 RUN gradle --no-daemon fatJar
 
-FROM openjdk:8-jre-alpine AS jar
+FROM openjdk:13-jre-alpine AS jar
 
 COPY --from=builder /topology/build/fatjar/topology.jar .
 

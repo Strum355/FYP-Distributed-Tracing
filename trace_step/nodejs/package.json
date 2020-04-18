@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "compile": "tsc",
+    "compile": "tsc --build tsconfig.json ",
     "bench": "cd benchmark && npm run bench"
   },
   "author": "Strum355",
@@ -16,6 +16,7 @@
     "clarify": "^2.1.0",
     "opentracing": "^0.14.4",
     "source-map-support": "^0.5.16",
-    "trace": "^3.1.1"
+    "trace": "^3.1.1",
+    "typescript": "^3.8.3"
   }
 }
